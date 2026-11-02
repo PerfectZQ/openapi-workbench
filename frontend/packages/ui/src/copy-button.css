@@ -1,5 +1,6 @@
 .copy-control { position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; max-width: 100%; vertical-align: middle; }
 .copy-control > .copy-button { display: inline-grid; place-items: center; flex: 0 0 auto; width: 28px; height: 28px; min-width: 28px; min-height: 28px; padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; box-shadow: none; color: var(--text-secondary); cursor: pointer; transition: color 140ms ease, background 140ms ease; }
+.copy-control > .copy-button.has-label { display: inline-flex; width: auto; gap: 6px; padding: 5px 8px; }
 .copy-control > .copy-button:hover:not(:disabled) { color: var(--primary); background: var(--primary-soft); }
 .copy-control > .copy-button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .copy-control[data-state='copied'] > .copy-button { color: var(--success); }

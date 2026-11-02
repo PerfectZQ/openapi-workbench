@@ -26,11 +26,11 @@ API Explorer 使用自己实现的 React 界面和请求逻辑，没有在内部
 
 ```bash
 # 接口文档与调试页面
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/api-explorer-react.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.2/api-explorer-react.tgz
 # 可选：其他页面需要单独复用控件
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/workbench-ui.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.2/workbench-ui.tgz
 # 可选：生成 Go / TypeScript 客户端代码
-go get github.com/PerfectZQ/openapi-workbench@v0.1.1
+go get github.com/PerfectZQ/openapi-workbench@v0.1.2
 ```
 
 Go 导入 `contract` 与 `sdkgen`；前端导入 `@api-explorer/react`、`@api-explorer/react/core`，通用控件通过 `@workbench/ui/*` 使用。SDK 生成的语言可单独或组合选择，项目专属名称和输出位置由调用方提供。工作台的契约加载、认证、路径和 SDK 下载同样由宿主注入。
@@ -55,7 +55,7 @@ Go 导入 `contract` 与 `sdkgen`；前端导入 `@api-explorer/react`、`@api-e
 ```bash
 ./script/bootstrap.sh
 ./script/check.sh
-./script/package.sh v0.1.1
+./script/package.sh v0.1.2
 # 示例工作台
 npm --prefix frontend run dev
 # 生成可部署的 Inventory 示例页面：frontend/dist-demo/

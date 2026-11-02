@@ -15,10 +15,13 @@ export function APICatalog({
   onSelect(api?: APIOperation): void
 }) {
   const { t } = useTranslation()
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const protocols = [...new Set(catalog.map((api) => api.protocol))]
   const [search, setSearch] = useState('')
   const [protocol, setProtocol] = useState('all')
   const [method, setMethod] = useState('all')
   const [lifecycle, setLifecycle] = useState('all')
+  const filterCount = [protocol, method, lifecycle].filter((value) => value !== 'all').length
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(catalogGroups(catalog).map((group) => group.key)))
   const [searchCollapsed, setSearchCollapsed] = useState<Set<string>>(() => new Set())
   const input = useRef<HTMLInputElement>(null)
@@ -122,7 +125,7 @@ export function APICatalog({
                   </span>
                   <span className="catalog-operation-kind">
                     <span className={`catalog-method method-${api.method.toLowerCase()}`}>{api.method}</span>
-                    <span className={`protocol-label protocol-${api.protocol}`}>{t(`swagger.protocol.${api.protocol}`)}</span>
+                    {protocols.length > 1 && <span className={`protocol-label protocol-${api.protocol}`}>{t(`swagger.protocol.${api.protocol}`)}</span>}
                   </span>
                 </button>
               ))}
@@ -172,37 +175,47 @@ export function APICatalog({
             <kbd>{navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} K</kbd>
           )}
         </div>
-        <div className="catalog-filters">
-          <Select
-            aria-label={t('swagger.protocol')}
-            value={protocol}
-            onValueChange={setProtocol}
-            showOptionDetails={false}
-          >
-            <option value="all">{t('swagger.allProtocols')}</option>
-            {['rest', 'innertop'].map((value) => (
-              <option key={value} value={value}>
-                {t('swagger.protocol.' + value)} · {catalog.filter((api) => api.protocol === value).length}
-              </option>
-            ))}
-          </Select>
-          <Select aria-label={t('swagger.method')} value={method} onValueChange={setMethod} showOptionDetails={false}>
-            <option value="all">{t('swagger.method')}</option>
-            {[...new Set(catalog.map((api) => api.method))].sort().map((value) => (
-              <option key={value}>{value}</option>
-            ))}
-          </Select>
-        </div>
-        <div className="catalog-lifecycle-filter">
-          <Select aria-label={t('swagger.lifecycle.filter')} value={lifecycle} onValueChange={setLifecycle} showOptionDetails={false}>
-            <option value="all">{t('swagger.lifecycle.all')}</option>
-            {(['active', 'deprecated', 'sunset'] as const).map((stage) => (
-              <option key={stage} value={stage}>
-                {t(`swagger.lifecycle.${stage}`)} · {catalog.filter((api) => !api.actionVersion && operationLifecycle(api.operation) === stage).length}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <button type="button" className="catalog-filter-toggle" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}>
+          {t('swagger.moreFilters')}{filterCount > 0 && <span>{filterCount}</span>}<ChevronDown size={14} />
+        </button>
+        {filtersOpen && (
+          <>
+            <div className="catalog-filters">
+              {protocols.length > 1 && (
+                <Select
+                  aria-label={t('swagger.protocol')}
+                  value={protocol}
+                  onValueChange={setProtocol}
+                  showOptionDetails={false}
+                >
+                  <option value="all">{t('swagger.allProtocols')}</option>
+                  {protocols.map((value) => (
+                    <option key={value} value={value}>
+                      {t('swagger.protocol.' + value)} · {catalog.filter((api) => api.protocol === value).length}
+                    </option>
+                  ))}
+                </Select>
+              )}
+              <Select aria-label={t('swagger.method')} value={method} onValueChange={setMethod} showOptionDetails={false}>
+                <option value="all">{t('swagger.method')}</option>
+                {[...new Set(catalog.map((api) => api.method))].sort().map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="catalog-lifecycle-filter">
+              <Select aria-label={t('swagger.lifecycle.filter')} value={lifecycle} onValueChange={setLifecycle} showOptionDetails={false}>
+                <option value="all">{t('swagger.lifecycle.all')}</option>
+                {(['active', 'deprecated', 'sunset'] as const).map((stage) => (
+                  <option key={stage} value={stage}>
+                    {t(`swagger.lifecycle.${stage}`)} · {catalog.filter((api) => !api.actionVersion && operationLifecycle(api.operation) === stage).length}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            {filterCount > 0 && <button type="button" onClick={() => { setProtocol('all'); setMethod('all'); setLifecycle('all') }}>{t('swagger.clearFilters')}</button>}
+          </>
+        )}
         <div className="catalog-tree-actions" role="group" aria-label={t('swagger.catalog')}>
           <button type="button" aria-disabled={allExpanded}
             onClick={() => {

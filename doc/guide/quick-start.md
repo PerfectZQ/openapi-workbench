@@ -9,9 +9,9 @@
 Go module 与两个前端包使用同一 `vX.Y.Z` tag。固定版本并提交 `go.sum`、`package-lock.json`，构建不得依赖开发机目录或隐式跟随 latest。
 
 ```bash
-go get github.com/PerfectZQ/openapi-workbench@v0.1.1
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/api-explorer-react.tgz
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/workbench-ui.tgz
+go get github.com/PerfectZQ/openapi-workbench@v0.1.2
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.2/api-explorer-react.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.2/workbench-ui.tgz
 ```
 
 工作台消费方需要 React / React DOM 19；单独使用通用 UI 时安装其声明的 peer dependencies，并在 Vite 中去重 React、react-i18next、Monaco 和 Motion。前端仅暴露构建后的公开入口，不引用仓库源码。 单独使用 `@workbench/ui` 编辑器时，Vite 需配置 `optimizeDeps: { exclude: ['@workbench/ui'] }`，由 Vite 处理包内 `?worker&inline` 导入，避免依赖预打包直接读取 Worker 查询路径。

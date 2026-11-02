@@ -27,13 +27,15 @@
 
 ![PreviewItem 的字段说明、请求编辑与成功响应](images/inventory-request.png)
 
+草稿和最近一次响应会在切换接口时保留，刷新页面后清空。“重置请求与响应”仅清空当前接口。短 JSON 使用紧凑编辑区，发送完成后会展示响应状态与正文。
+
 ### 认证设置
 
 页面可以集中设置 Basic、Bearer、自定义授权和公共 Header。截图中的凭证均为“未配置”；Inventory 示例不要求认证，因此没有填写或展示任何真实凭证。
 
 ![未填写凭证的认证与 Header 设置窗口](images/inventory-auth.png)
 
-复现这些画面：按下文启动本地示例，将右上角语言切换为“简体中文”；打开概览，或选择 `Preview an item` 并点击“发送请求”；点击顶部“认证与 Header”查看设置。
+复现这些画面：按下文启动本地示例，将右上角语言切换为“简体中文”；打开概览，或选择 `Preview an item` 并点击“发送请求”；点击顶部“全局认证与请求头”查看设置。
 
 ## 1. 分清构建产物
 
@@ -42,7 +44,7 @@
 | 通用 UI | `npm --prefix frontend run build:ui` | `frontend/packages/ui/dist/`，供其他 React 项目导入的控件与声明 |
 | API Explorer 组件库 | `npm --prefix frontend run build` | `frontend/dist/`，包含 `index.js`、`core.js`、`api-explorer.css`、类型声明与字体许可；同时先构建 UI |
 | Inventory 示例站点 | 先构建组件库，再执行 `npm --prefix frontend run build:demo` | `frontend/dist-demo/index.html` 与 `assets/`，可由 HTTP 服务托管的示例页面 |
-| 配套分发包 | 完成构建检查后执行 `./script/package.sh v0.1.1` | `.artifacts/release/{api-explorer-react.tgz,workbench-ui.tgz,SHA256SUMS}`，供 npm 安装 |
+| 配套分发包 | 完成构建检查后执行 `./script/package.sh v0.1.2` | `.artifacts/release/{api-explorer-react.tgz,workbench-ui.tgz,SHA256SUMS}`，供 npm 安装 |
 | 接入项目的页面 | 在接入项目执行自己的 `npm run build` | 由接入项目配置，例如 `dist/index.html` 与 `dist/assets/`，交给该项目的后端或静态服务器 |
 
 组件库 `frontend/dist/` 没有页面入口 `index.html`，不能直接当网站部署。`dist-demo/` 是 Inventory 示例；接入业务系统时应使用自己的契约加载、认证与服务路由。
@@ -74,7 +76,7 @@ npm exec -- vite preview --config vite.demo.config.ts --host 127.0.0.1 --port 51
 
 ```bash
 GO_BIN=/path/to/go1.26.4/bin/go ./script/check.sh
-./script/package.sh v0.1.1
+./script/package.sh v0.1.2
 ```
 
 `check.sh` 执行 Go 测试、前端构建与测试。`package.sh` 校验两个包及锁文件版本，打包已有 `dist` 并生成 SHA256；它使用 `--ignore-scripts`，不会自行重新构建，必须先执行上述检查。tag 要与包版本相同。
@@ -95,7 +97,7 @@ cd api-docs-web
 npm init -y
 npm pkg set type=module scripts.dev="vite --host 127.0.0.1 --port 5194" scripts.build="vite build" scripts.preview="vite preview --host 127.0.0.1 --port 5194"
 npm install --save-exact react@19.2.8 react-dom@19.2.8
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/api-explorer-react.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.2/api-explorer-react.tgz
 npm install --save-dev --save-exact vite@8.2.1 @vitejs/plugin-react@6.0.5 typescript@7.0.2 @types/react@19.2.18 @types/react-dom@19.2.4
 mkdir src public
 ```

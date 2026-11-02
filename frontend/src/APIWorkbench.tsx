@@ -12,6 +12,7 @@ import { APIOverview } from './APIOverview'
 import { download } from './download'
 import { APICatalog } from './APICatalog'
 import { CatalogResizeHandle } from './CatalogResizeHandle'
+import type { RequestSession } from './RequestConsole'
 import { OperationDetail } from './OperationDetail'
 import { InnerTOPExport } from './InnerTOPExport'
 import { operations, type APIOperation, type Specification } from './contract'
@@ -50,6 +51,7 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
   const menu = useRef<HTMLDialogElement>(null)
   const menuButton = useRef<HTMLButtonElement>(null)
   const catalog = useMemo(() => (spec ? operations(spec) : []), [spec])
+  const sessions = useMemo(() => new Map<string, RequestSession>(), [spec])
   const selected = catalog.find((api) => encodeURIComponent(api.key) === selection)
   useEffect(() => {
     const change = () => setSelection(window.location.hash.slice(1))
@@ -191,6 +193,7 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
                 key={selected.key}
                 spec={spec}
                 api={selected}
+                sessions={sessions}
                 settings={settings}
                 onSettings={() => setSettingsOpen(true)}
                 onExport={host.innerTOP ? () => setExporting(selected) : undefined}

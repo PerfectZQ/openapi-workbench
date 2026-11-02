@@ -77,7 +77,7 @@ function SchemaRows({
               : undefined
           }
         >
-          {field.description && <p>{field.description}</p>}
+          {field.description ? <p>{field.description}</p> : <p className="api-muted">{t('swagger.noDescription')}</p>}
           {field.additionalProperties && <p>{t('swagger.dynamicFields')}</p>}
           {field.default !== undefined && (
             <p className="schema-default">
@@ -86,11 +86,6 @@ function SchemaRows({
           )}
           <EnumValues schema={field.type === 'array' && field.items ? { ...field, ...resolveSchema(spec, field.items) } : field} />
           {recursive && <p className="api-muted">{child?.$ref?.split('/').at(-1)}</p>}
-          {!field.description &&
-            !field.additionalProperties &&
-            field.default === undefined &&
-            !field.enum &&
-            !recursive && <span className="api-muted">—</span>}
         </FieldRow>
         {expandable && expanded.has(name) && (
           <SchemaRows spec={spec} schema={child} depth={depth + 1} ancestors={references} />

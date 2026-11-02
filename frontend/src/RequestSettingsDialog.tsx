@@ -29,6 +29,7 @@ export function RequestSettingsDialog({
   const title = useRef<HTMLHeadingElement>(null)
   const id = useId()
   const [draft, setDraft] = useState(() => structuredClone(settings))
+  const [submitted, setSubmitted] = useState(false)
   const [tab, setTab] = useState('standardAuthorizations')
   const types = authorizationTypes(spec, draft.customAuthorizations)
   const issue = headerIssue(draft.headers) ?? customAuthorizationIssue(spec, draft.customAuthorizations)
@@ -76,6 +77,7 @@ export function RequestSettingsDialog({
           <X size={18} />
         </button>
       </header>
+      <p className="settings-scope">{t('swagger.settingsHint')}</p>
       <div className="api-segments settings-tabs">
         {['standardAuthorizations', 'customAuthorizations', 'sharedHeaders'].map((key) => (
           <button key={key} type="button" aria-pressed={tab === key} onClick={() => setTab(key)}>
@@ -283,7 +285,8 @@ export function RequestSettingsDialog({
             </button>
           </>
         )}
-        {issue && (
+        {issue && !submitted && <p className="api-muted">{t('swagger.configurationHint')}</p>}
+        {issue && submitted && (
           <p className="request-error" role="alert">
             {t(`swagger.validation.${issue.code}`, { field: issue.field })}
           </p>
@@ -300,8 +303,9 @@ export function RequestSettingsDialog({
         <button
           className="primary-button"
           type="button"
-          disabled={!!issue}
           onClick={() => {
+            setSubmitted(true)
+            if (issue) return
             onSave({
               ...draft,
               customAuthorizations: draft.customAuthorizations.map((type) => ({ ...type, name: type.name.trim() })),

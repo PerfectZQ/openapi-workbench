@@ -6,7 +6,7 @@ import { actionIdentity, formatGroupLabel, operationGroup, operationLifecycle, t
 import { schemaExample } from './request'
 import { SchemaReference } from './SchemaReference'
 import { FieldRow, FieldTable } from './FieldTable'
-import { RequestConsole } from './RequestConsole'
+import { RequestConsole, type RequestSession } from './RequestConsole'
 import { CopyButton } from '@workbench/ui/CopyButton'
 import type { RequestAdapter } from './host'
 import type { RequestSettings } from './settings'
@@ -18,6 +18,7 @@ export function OperationDetail({
   spec,
   api,
   settings,
+  sessions,
   onSettings,
   requestAdapter,
   onExport,
@@ -26,6 +27,7 @@ export function OperationDetail({
 }: {
   spec: Specification
   api: APIOperation
+  sessions: Map<string, RequestSession>
   settings: RequestSettings
   onSettings(): void
   onExport?(): void
@@ -120,7 +122,7 @@ export function OperationDetail({
         </div>
         <div className="operation-utilities">
           <AuthorizationRequirements spec={spec} api={api} />
-          <CopyButton value={window.location.href} label={t('swagger.copyLink')} />
+          <CopyButton value={window.location.href} label={t('swagger.copyLink')} showLabel />
           {api.protocol === 'innertop' && onExport && (
             <button type="button" className="operation-export" onClick={onExport} aria-haspopup="dialog">
               <Download size={16} aria-hidden="true" />
@@ -160,7 +162,7 @@ export function OperationDetail({
                         {t(system ? 'swagger.fixedValue' : 'swagger.defaultValue')}: <code>{String(value)}</code>
                       </p>
                     )}
-                    {!parameter.description && value === undefined && <span className="api-muted">—</span>}
+                    {!parameter.description && value === undefined && <span className="api-muted">{t('swagger.noDescription')}</span>}
                   </FieldRow>
                 )
               })}
@@ -238,7 +240,7 @@ export function OperationDetail({
           )}
         </section>
       </article>
-      <RequestConsole key={api.key} spec={spec} api={api} settings={settings} onSettings={onSettings} adapter={requestAdapter} />
+      <RequestConsole sessions={sessions} key={api.key} spec={spec} api={api} settings={settings} onSettings={onSettings} adapter={requestAdapter} />
     </div>
   )
 }

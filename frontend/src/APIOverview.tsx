@@ -35,6 +35,13 @@ export function APIOverview({
           </div>
           {spec.info.description && <p className="overview-description">{spec.info.description}</p>}
         </header>
+        <section className="overview-start">
+          <h2>{t('swagger.getStarted')}</h2>
+          <p>{t('swagger.getStartedHint')}</p>
+          {catalog[0] && <button type="button" className="primary-button" onClick={() => onSelect(catalog[0])}>
+            {t('swagger.browseFirst')}<ArrowRight size={15} />
+          </button>}
+        </section>
         <div className="overview-server">
           <span>{t('swagger.server')}</span>
           <code>

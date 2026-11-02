@@ -6,6 +6,7 @@ import { Select } from '@workbench/ui/Select'
 import type { RequestAdapter } from './host'
 import { actionIdentity, type APIOperation, type Specification } from './contract'
 import {
+  type RequestDraft,
   initialDraft,
   effectiveDraft,
   prepareRequest,
@@ -35,13 +36,24 @@ interface ResponseResult {
   headers: string
 }
 
+export interface RequestSession {
+  draft: RequestDraft
+  result?: ResponseResult
+  error: string
+  notice: string
+  tab: string
+  responseTab: string
+}
+
 export function RequestConsole({
   spec,
   api,
   settings,
   onSettings,
   adapter,
+  sessions,
 }: {
+  sessions: Map<string, RequestSession>
   spec: Specification
   api: APIOperation
   adapter?: RequestAdapter
@@ -50,16 +62,28 @@ export function RequestConsole({
 }) {
   const { t } = useTranslation()
   const authenticationProvider = adapter?.authentication
-  const [draft, setDraft] = useState(() => initialDraft(spec, api, adapter))
+  const saved = sessions.get(api.key)
+  const [draft, setDraft] = useState(() => saved?.draft ?? initialDraft(spec, api, adapter))
   const hasBody = api.operation.parameters?.some((parameter) => parameter.in === 'body')
-  const [tab, setTab] = useState(hasBody ? 'body' : 'parameters')
-  const [responseTab, setResponseTab] = useState('body')
-  const [result, setResult] = useState<ResponseResult>()
-  const [error, setError] = useState('')
+  const [tab, setTab] = useState(saved?.tab ?? (hasBody ? 'body' : 'parameters'))
+  const [responseTab, setResponseTab] = useState(saved?.responseTab ?? 'body')
+  const [result, setResult] = useState<ResponseResult | undefined>(saved?.result)
+  const [error, setError] = useState(saved?.error ?? '')
   const [sending, setSending] = useState(false)
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState(saved?.notice ?? '')
   const [showCurl, setShowCurl] = useState(false)
   const [wrap, setWrap] = useState(false)
+  useEffect(() => {
+    sessions.set(api.key, { draft, result, error, notice, tab, responseTab })
+  }, [sessions, api.key, draft, result, error, notice, tab, responseTab])
+  const responseView = useRef<HTMLElement>(null)
+  const revealResponse = useRef(false)
+  useEffect(() => {
+    if (result && revealResponse.current) {
+      revealResponse.current = false
+      responseView.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' })
+    }
+  }, [result])
   const request = useRef<AbortController | null>(null)
   useEffect(
     () => () => {
@@ -145,6 +169,7 @@ export function RequestConsole({
       if (response.status === 401 && prepared.automaticAuth) adapter?.authentication?.onUnauthorized?.()
       const body = await response.text()
       if (request.current !== controller || controller.signal.aborted) return
+      revealResponse.current = true
       setResult({
         status: response.status,
         statusText: response.statusText,
@@ -182,6 +207,7 @@ export function RequestConsole({
         </div>
         <span className="api-live-dot">{window.location.host}</span>
       </header>
+      <p className="console-session-hint">{t('swagger.sessionHint')}</p>
       <div className="console-route">
         <span className={`http-method method-${api.method.toLowerCase()}`}>{api.method}</span>
         <code title={address}>{address || new URL(api.runtimePath, window.location.origin).href}</code>
@@ -257,6 +283,7 @@ export function RequestConsole({
                 </button>
                 <HelpTip label={t('swagger.auth')} description={t('swagger.authHint')} />
               </div>
+              <p className="api-muted auth-scope">{t(draft.customAuth ? 'swagger.customAuthScope' : 'swagger.inheritAuthScope')}</p>
               {!draft.customAuth && (
                 <>
                   <div className="inherited-credentials">
@@ -425,6 +452,7 @@ export function RequestConsole({
           disabled={sending}
           onClick={() => {
             setDraft(initialDraft(spec, api, adapter))
+            setResult(undefined)
             setError('')
             setNotice('')
           }}
@@ -456,7 +484,7 @@ export function RequestConsole({
           <CodeBlock value={curl || t('swagger.completeRequest')} />
         </div>
       )}
-      <section className="response-view" aria-label={t('swagger.response')}>
+      <section ref={responseView} className="response-view" aria-label={t('swagger.response')}>
         <header>
           <h3>{t('swagger.response')}</h3>
           {result && (

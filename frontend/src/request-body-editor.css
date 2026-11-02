@@ -39,8 +39,8 @@
   font-size: var(--ui-caption);
 }
 .request-editor-surface {
-  height: 240px;
-  min-height: 180px;
+  height: var(--request-editor-height, 240px);
+  min-height: 104px;
   min-width: 0;
   resize: vertical;
   overflow: hidden;

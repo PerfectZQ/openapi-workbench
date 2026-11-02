@@ -3,7 +3,7 @@ import { Check, Copy, CircleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import './copy-button.css'
 
-export function CopyButton({ value, label }: { value: string; label?: string }) {
+export function CopyButton({ value, label, showLabel = false }: { value: string; label?: string; showLabel?: boolean }) {
   const { t } = useTranslation()
   const [state, setState] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle')
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -31,8 +31,9 @@ export function CopyButton({ value, label }: { value: string; label?: string }) 
   const feedback = state === 'copied' || state === 'failed' ? t(`copyButton.${state}`) : ''
   const action = label ?? t('copyButton.copy')
   return <span className="copy-control" data-state={state}>
-    <button type="button" className="copy-button" aria-label={action} title={feedback || action} aria-busy={state === 'copying'} onClick={event => { event.stopPropagation(); void copy() }}>
+    <button type="button" className={`copy-button${showLabel ? ' has-label' : ''}`} aria-label={action} title={feedback || action} aria-busy={state === 'copying'} onClick={event => { event.stopPropagation(); void copy() }}>
       {state === 'copied' ? <Check size={14} aria-hidden="true" /> : state === 'failed' ? <CircleAlert size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+      {showLabel && <span>{action}</span>}
     </button>
     <span className="copy-feedback" role="status">{feedback}</span>
   </span>

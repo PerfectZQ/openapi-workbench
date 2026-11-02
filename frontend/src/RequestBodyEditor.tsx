@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { Braces, Check, CircleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import JSONEditor from '@workbench/ui/code-editor/JSONEditor'
@@ -17,6 +17,8 @@ export function RequestBodyEditor({
 }) {
   const { t } = useTranslation()
   const [codeMode, setCodeMode] = useState(() => !matchMedia('(pointer: coarse)').matches)
+  const lineCount = value.split('\n').length
+  const height = Math.min(320, Math.max(104, lineCount * 20 + 24))
   let valid = true
   try {
     JSON.parse(value)
@@ -38,7 +40,7 @@ export function RequestBodyEditor({
           <CopyButton value={value} />
         </div>
       </div>
-      <div className="request-editor-surface">
+      <div className="request-editor-surface" style={{ '--request-editor-height': `${height}px` } as CSSProperties}>
         {codeMode ? (
           <JSONEditor text={value} editable label={t('swagger.body')} onChange={onChange} onFormat={onFormat} />
         ) : (
@@ -50,7 +52,7 @@ export function RequestBodyEditor({
           {valid ? <Check size={12} /> : <CircleAlert size={12} />}
           {t(valid ? 'swagger.validJSON' : 'swagger.invalidJSON')}
         </span>
-        <span>{t('swagger.lineCount', { count: value.split('\n').length })}</span>
+        <span>{t('swagger.lineCount', { count: lineCount })}</span>
         <span>JSON</span>
         {!codeMode && (
           <button type="button" onClick={() => setCodeMode(true)}>
