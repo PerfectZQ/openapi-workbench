@@ -1,0 +1,127 @@
+.authorization-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: var(--ui-micro);
+  line-height: var(--line-ui);
+  font-weight: var(--weight-medium);
+}
+.authorization-badge.is-standard {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+.authorization-badge.is-custom {
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+}
+.authorization-name,
+.authorization-identity,
+.authorization-selection,
+.authorization-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+.authorization-requirements {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  gap: 8px 12px;
+  color: var(--text-secondary);
+  font-size: var(--ui-caption);
+}
+.authorization-requirements > svg {
+  justify-self: center;
+}
+.authorization-requirement {
+  display: grid;
+  grid-column: 2;
+  gap: 8px;
+  min-width: 0;
+}
+.authorization-identity .authorization-name {
+  color: var(--text);
+}
+.authorization-identity code,
+.authorization-selection code,
+.settings-scheme summary small {
+  overflow-wrap: anywhere;
+  font-size: var(--ui-caption);
+}
+.authorization-operator {
+  color: var(--text-tertiary);
+  font-size: var(--ui-caption);
+}
+.authorization-requirements > .authorization-operator {
+  grid-column: 1;
+  justify-self: center;
+}
+.authorization-fields,
+.custom-authorization-fields,
+.authorization-select,
+.authorization-fields label,
+.custom-authorization-fields label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--ui-control);
+}
+.custom-authorization-fields {
+  gap: 16px;
+}
+.authorization-header-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+.custom-authorization-fields > button {
+  justify-self: start;
+}
+.settings-scheme summary > span:first-child {
+  min-width: 0;
+}
+.settings-scheme summary strong {
+  overflow-wrap: anywhere;
+}
+.settings-scheme summary > span:nth-child(2) {
+  flex: none;
+}
+.request-settings-dialog .add-authorization {
+  margin-top: 16px;
+}
+.authorization-selection {
+  margin: 12px 0;
+}
+.request-auth-settings > button {
+  margin: 12px 0;
+}
+.request-settings-dialog .settings-tabs {
+  flex-wrap: wrap;
+}
+@media (max-width: 820px) {
+  .authorization-header-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .authorization-header-row > label:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .authorization-header-row > button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .authorization-select .select-trigger,
+  .request-auth-settings .authorization-fields input,
+  .request-auth-settings .basic-auth-fields input {
+    min-height: 44px;
+  }
+  .settings-scheme summary {
+    gap: 8px;
+  }
+}

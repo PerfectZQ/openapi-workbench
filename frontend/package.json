@@ -1,0 +1,59 @@
+{
+  "name": "@api-explorer/react",
+  "version": "0.1.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "default": "./dist/core.js"
+    },
+    "./style.css": "./dist/api-explorer.css",
+    "./licenses/JetBrainsMono-OFL.txt": "./dist/JetBrainsMono-OFL.txt"
+  },
+  "scripts": {
+    "build:ui": "npm run build --workspace @workbench/ui",
+    "check": "tsc -p tsconfig.json",
+    "build": "npm run build:ui && vite build && vite build --mode core && tsc -p tsconfig.build.json && npm run check",
+    "test": "node --test test/*.test.mjs",
+    "dev": "vite --config vite.demo.config.ts",
+    "build:demo": "vite build --config vite.demo.config.ts",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@workbench/ui": "*",
+    "i18next": "^26.4.2",
+    "react-i18next": "^17.0.15",
+    "lucide-react": "^1.33.0",
+    "@vitejs/plugin-react": "6.0.5",
+    "typescript": "7.0.2",
+    "vite": "8.2.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@types/node": "24.13.3",
+    "rolldown": "1.2.6",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PerfectZQ/openapi-workbench.git",
+    "directory": "frontend"
+  }
+}

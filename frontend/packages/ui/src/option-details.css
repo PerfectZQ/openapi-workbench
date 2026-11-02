@@ -1,0 +1,18 @@
+.option-with-details { display: flex; align-items: center; min-width: 0; }
+.option-with-details > :is(.select-option, .multi-select-option, .input-picker-option) { flex: 1; }
+.option-details-trigger { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-tertiary); cursor: pointer; }
+.option-details-trigger:hover, .option-details-trigger[aria-expanded='true'] { color: var(--primary); background: var(--primary-soft); }
+.option-details-trigger:focus-visible, .option-details-popover:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.option-details-popover { position: fixed; inset: auto; margin: 0; padding: 16px; overflow-y: auto; overscroll-behavior: contain; background: var(--surface); color: var(--text); border: 0; border-radius: 10px; box-shadow: 0 12px 36px rgb(20 33 56 / 18%), 0 0 0 1px var(--border-light); font-size: var(--ui-caption); font-weight: var(--weight-regular); line-height: var(--line-body); overflow-wrap: anywhere; user-select: text; }
+.option-details-popover header { display: flex; align-items: flex-start; gap: 12px; }
+.option-details-popover header strong { flex: 1; font-size: var(--ui-control); font-weight: var(--weight-semibold); }
+.option-details-popover header button { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 5px; background: var(--surface-muted); color: var(--text-secondary); }
+.option-details-popover p { margin: 10px 0 0; white-space: pre-wrap; color: var(--text-secondary); }
+.option-details-popover dl { margin: 12px 0 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; }
+.option-details-popover dt { color: var(--text-tertiary); }
+.option-details-popover dd { margin: 0; }
+.option-details-popover code { font-size: inherit; white-space: normal; }
+@media (max-width: 820px), (pointer: coarse) {
+  .option-details-trigger { flex-basis: 44px; width: 44px; height: 44px; }
+  .option-details-popover header button { flex-basis: 44px; width: 44px; height: 44px; }
+}

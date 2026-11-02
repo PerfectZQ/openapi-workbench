@@ -1,0 +1,8 @@
+
+.action-menu { position: fixed; inset: auto; width: 208px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; margin: 0; padding: 6px; border: 0; border-radius: 10px; background: var(--surface-raised); box-shadow: var(--shadow-float); }
+.action-menu:popover-open { display: grid; gap: 2px; }
+.action-menu .action-button { justify-content: flex-start; width: 100%; background: transparent; box-shadow: none; font-weight: var(--weight-regular); }
+.action-menu .action-button:hover:not(:disabled) { background: var(--surface-muted); box-shadow: none; }
+@media (max-width: 820px) {
+  .action-menu .action-button { min-height: 44px; }
+}

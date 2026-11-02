@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+subject=$(sed -n '1p' "$1")
+printf '%s\n' "$subject" | grep -Eq '^(feat|fix|refactor|perf|test|docs|build|ci|chore|revert)(\([a-z0-9][a-z0-9-]*\))?!?: [^[:space:]].*$' || {
+  echo '提交格式：<type>(<scope>): <准确的中文结果>' >&2
+  exit 1
+}
+[ "${#subject}" -le 72 ] || { echo '提交标题超过 72 字符' >&2; exit 1; }
+[ -z "$(sed -n '2p' "$1")" ] || { echo '标题后必须空一行' >&2; exit 1; }

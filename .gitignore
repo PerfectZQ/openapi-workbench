@@ -1,0 +1,16 @@
+.DS_Store
+.idea/
+.vscode/
+.codegraph/
+.codex/*
+!.codex/config.toml
+node_modules/
+dist/
+dist-demo/
+*.tsbuildinfo
+*.log
+*.test
+.env
+.env.*
+*.local.*
+.artifacts/

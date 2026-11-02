@@ -1,0 +1,111 @@
+.help-tip { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; }
+.help-tip-trigger, .help-tooltip-close {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--text-tertiary);
+  background: transparent;
+  box-shadow: none;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease;
+}
+.help-tip-trigger { position: relative; width: 18px; height: 18px; min-width: 18px; min-height: 18px; }
+.help-tip-trigger::before { content: ''; position: absolute; inset: -3px; }
+.help-tip-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: calc(var(--radius-control) / 2);
+  color: var(--text-tertiary);
+  background: color-mix(in srgb, var(--text-tertiary) 10%, transparent);
+  font: var(--weight-semibold) var(--ui-caption)/1 var(--font-sans);
+  transition: color 140ms ease, background 140ms ease;
+}
+button:is(:hover, :focus-visible, [aria-expanded='true']) > .help-tip-icon { color: var(--primary); background: var(--primary-soft); }
+.help-tooltip-close:hover { color: var(--text); background: var(--surface-hover); }
+.help-tip-trigger:focus-visible, .help-tooltip-close:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.help-tooltip {
+  position: fixed;
+  inset: auto;
+  z-index: 2000;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-float);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-float);
+  color: var(--text);
+  font: var(--weight-regular) var(--ui-control)/var(--line-body) var(--font-sans);
+  letter-spacing: 0;
+  text-align: start;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  animation: help-tip-enter 140ms ease-out both;
+}
+@keyframes help-tip-enter {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+.help-tooltip::backdrop { background: transparent; }
+.help-tooltip.is-copyable { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: minmax(0, 1fr); align-items: start; gap: 8px; padding: 8px 10px; border-radius: var(--radius-control); }
+.help-tooltip.is-copyable .help-tooltip-content { padding-block: 4px; }
+.help-tooltip-value { white-space: pre-wrap; user-select: text; }
+.help-tooltip.is-copyable:has(.copy-control[data-state='failed']) { grid-template-columns: minmax(0, 1fr); }
+.help-tooltip-header { display: flex; align-items: flex-start; gap: 12px; padding-inline-end: 28px; }
+.help-tooltip-header h2 { flex: 1; margin: 0; padding-block: 2px; color: var(--text-heading); font-size: var(--ui-body); font-weight: var(--weight-semibold); line-height: var(--line-ui); }
+.help-tooltip-close { position: absolute; top: 20px; right: 16px; }
+.help-tooltip-content { min-width: 0; min-height: 0; overflow: auto; overflow-wrap: anywhere; overscroll-behavior: contain; color: var(--text-secondary); }
+.help-tooltip-content:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 2px; }
+.help-tooltip-content :is(p, h3, h4, ul, ol, dl, pre) { margin: 0; }
+.help-tooltip-content :is(strong, b, h3, h4, dt) { color: var(--text); font-size: inherit; font-weight: var(--weight-semibold); }
+.help-tooltip-content :is(h3, h4) { line-height: var(--line-ui); }
+.help-tooltip-content section { display: grid; gap: 8px; }
+.help-tooltip-content > :is(p, section) + section, .help-tooltip-content section + section { margin-top: 16px; }
+.help-tooltip-content > section + :not(section) { margin-top: 12px; }
+.help-tooltip-content > :not(section) + :not(section), .help-tooltip-content :is(div, li) > p + p { margin-top: 8px; }
+.help-tooltip-content :is(ul, ol) { padding-inline-start: 1.5em; }
+.help-tooltip-content li { margin: 0; padding: 0; }
+.help-tooltip-content li + li, .help-tooltip-content li > :is(p, ul, ol) + :is(p, ul, ol) { margin-top: var(--text-list-gap); }
+.help-tooltip-content dl { display: grid; grid-template-columns: fit-content(35%) minmax(0, 1fr); gap: 6px 12px; }
+.help-tooltip-content dd { min-width: 0; margin: 0; }
+.help-tooltip-content :is(code, kbd) { font-family: var(--font-mono); font-size: var(--ui-caption); color: var(--text); }
+.help-tooltip-content code { padding: 1px 4px; border-radius: 4px; background: var(--surface-muted); white-space: pre-wrap; }
+.help-tooltip-content pre { padding: 10px 12px; border-radius: var(--radius-control); background: var(--surface-muted); overflow-x: auto; }
+.help-tooltip-content pre code { padding: 0; }
+.help-tooltip-content a { color: var(--primary); text-underline-offset: 3px; }
+.help-tooltip-content .help-step-example { display: grid; gap: var(--text-list-gap); padding: 10px 12px; list-style: none; background: var(--surface-muted); border-radius: var(--radius-control); }
+.help-step-example li { display: flex; align-items: baseline; gap: 12px; }
+.help-step-example li + li { margin-top: 0; }
+.help-step-example b { font-family: var(--font-mono); }
+.help-step-example small { color: var(--text-secondary); font-size: inherit; }
+.help-tooltip-actions { display: flex; justify-content: flex-end; padding-top: 12px; border-top: 1px solid var(--border-light); }
+@media (max-width: 820px), (pointer: coarse) {
+  .help-tip-trigger, .help-tooltip-close { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+  .help-tip-trigger::before { inset: 0; }
+  .help-tip-icon { width: 18px; height: 18px; }
+  .help-tooltip { padding: 16px; }
+  .help-tooltip-header { padding-inline-end: 40px; }
+  .help-tooltip-close { top: 6px; right: 8px; }
+  .help-tooltip-actions button { min-height: 44px; }
+}
+@media (max-width: 480px) {
+  .help-tooltip-content dl { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .help-tooltip-content dd + dt { margin-top: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .help-tooltip { animation: none; }
+  .help-tip-trigger, .help-tip-icon, .help-tooltip-close { transition: none; }
+}

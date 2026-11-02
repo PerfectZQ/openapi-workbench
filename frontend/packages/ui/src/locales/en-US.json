@@ -1,0 +1,21 @@
+{
+  "codeEditor.JSONEditor.18bb78b8": "Node JSON Configuration",
+  "codeEditor.JSONEditor.a0b38ee0": "Format JSON",
+  "helpTip.5d17cf9f": "{{arg0}} details",
+  "helpTip.fd066d54": "View description \"{{arg0}}",
+  "optionDetails.3537d5ef": "Identification",
+  "optionDetails.4cfed70f": "Close Options Details",
+  "optionDetails.a67ba51a": "View details for {{arg0}}",
+  "optionDetails.ccf83c05": "{{arg0}} details",
+  "select.search": "Search options",
+  "select.searchPlaceholder": "Search name, identifier or description",
+  "select.clearSearch": "Clear search",
+  "select.noResults": "No matching options. Try another keyword.",
+  "select.382f4b55": "Choose",
+  "select.944eaaa9": "Designation: {{arg0}}",
+  "helpTip.close": "Close help",
+  "copyButton.copy": "Copy",
+  "copyButton.copyLabel": "Copy {{label}}",
+  "copyButton.copied": "Copied",
+  "copyButton.failed": "Copy failed. Retry or copy manually."
+}

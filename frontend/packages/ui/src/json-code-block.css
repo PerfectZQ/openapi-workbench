@@ -1,0 +1,17 @@
+
+.json-code-block { overflow: hidden; color: #344054; background: #f5f7fa; border-radius: 8px; }
+.json-code-language { display: flex; justify-content: space-between; padding: 9px 12px 0; color: var(--text-tertiary); font: var(--ui-micro)/var(--line-ui) var(--font-mono); }
+.json-code-body { position: relative; }
+.json-code-body pre, .json-code-body textarea { display: block; width: 100%; margin: 0; padding: 12px; tab-size: 2; font: var(--code-font-size)/var(--code-line-height) var(--font-mono); letter-spacing: 0; white-space: pre; overflow: auto; text-align: left; border: 0; border-radius: 0; }
+.json-code-body pre { max-height: 340px; background: transparent; }
+.json-code-body code { font: var(--code-font-size)/var(--code-line-height) var(--font-mono); }
+.json-code-block.is-editable pre { pointer-events: none; }
+.json-code-body textarea { position: absolute; inset: 0; height: 100%; min-height: 0; color: transparent; caret-color: var(--text); background: transparent; resize: none; -webkit-text-fill-color: transparent; }
+.json-code-body textarea::selection { background: rgb(47 99 212 / 18%); }
+.json-code-body textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.json-token-key { color: #315b92; }
+.json-token-string { color: #27735b; }
+.json-token-number { color: #985725; }
+.json-token-literal { color: #735894; }
+.json-code-block.is-editable pre { height: 100%; max-height: none; }
+.json-code-body pre, .json-code-body textarea { font-size: var(--code-font-size); line-height: var(--code-line-height); }

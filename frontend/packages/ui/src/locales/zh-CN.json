@@ -1,0 +1,21 @@
+{
+  "codeEditor.JSONEditor.18bb78b8": "节点 JSON 配置",
+  "codeEditor.JSONEditor.a0b38ee0": "格式化 JSON",
+  "helpTip.5d17cf9f": "{{arg0}}详细说明",
+  "helpTip.fd066d54": "查看“{{arg0}}”说明",
+  "optionDetails.3537d5ef": "标识",
+  "optionDetails.4cfed70f": "关闭选项详情",
+  "optionDetails.a67ba51a": "查看“{{arg0}}”详情",
+  "optionDetails.ccf83c05": "{{arg0}}详情",
+  "select.search": "搜索选项",
+  "select.searchPlaceholder": "搜索名称、标识或说明",
+  "select.clearSearch": "清除搜索",
+  "select.noResults": "没有匹配的选项，请更换关键词",
+  "select.382f4b55": "请选择",
+  "select.944eaaa9": "标识：{{arg0}}",
+  "helpTip.close": "关闭说明",
+  "copyButton.copy": "复制",
+  "copyButton.copyLabel": "复制{{label}}",
+  "copyButton.copied": "已复制",
+  "copyButton.failed": "复制失败，请重试或手动复制"
+}

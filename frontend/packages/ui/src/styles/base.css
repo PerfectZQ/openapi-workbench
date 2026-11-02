@@ -1,0 +1,82 @@
+:root {
+  font-family: var(--font-sans);
+  font-size: var(--ui-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--line-body);
+  color: var(--text);
+  background: var(--surface-app);
+  font-synthesis: none;
+  --surface: #ffffff;
+  --success: #20845c;
+  --success-soft: #eaf7f1;
+  --warning: #c87812;
+  --warning-soft: #fff5df;
+  --danger: #c43c35;
+  --danger-soft: #fff0ef;
+  --purple: #7056d8;
+  --purple-soft: #f3f0ff;
+  --text-list-gap: 3px;
+  --border: #d9dde3;
+  --border-light: #eceef1;
+  --surface-subtle: #fafbfc;
+  --shadow: 0 1px 2px rgb(24 31 44 / 4%), 0 4px 12px rgb(24 31 44 / 3%);
+  --shadow-raised: 0 8px 24px rgb(24 31 44 / 8%), 0 24px 64px rgb(24 31 44 / 10%);
+  --font-sans: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "PingFang SC", "Microsoft YaHei UI", monospace;
+  --ui-micro: 11px;
+  --ui-caption: 12px;
+  --ui-control: 13px;
+  --ui-body: 14px;
+  --ui-title: 16px;
+  --ui-panel: 18px;
+  --ui-heading: 20px;
+  --ui-display: 24px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --line-heading: 1.35;
+  --line-ui: 1.5;
+  --line-body: 1.6;
+  --code-font-size: var(--ui-control);
+  --code-line-height: 22px;
+  --surface-raised: #ffffff;
+  --surface-muted: #f5f6f8;
+  --surface-hover: #f0f1f4;
+  --line-essential: #d5dae2;
+  --shadow-float: 0 4px 12px rgb(24 31 44 / 6%), 0 16px 40px rgb(24 31 44 / 10%);
+  --primary: #2f63d4;
+  --primary-hover: #244fac;
+  --primary-soft: #edf2fc;
+  --text-heading: #252b35;
+  --text: #374151;
+  --text-secondary: #5b6574;
+  --text-tertiary: #6b7280;
+  --surface-app: #f1f2f4;
+  --surface-selected: #edf2fc;
+  --shadow-surface: 0 2px 3px rgb(28 33 43 / 3%), 0 8px 20px rgb(28 33 43 / 3%);
+  --shadow-control: 0 2px 4px rgb(24 31 44 / 6%), 0 4px 10px rgb(24 31 44 / 3%);
+  --shadow-inset: inset 0 1px 2px rgb(28 33 43 / 4%);
+  --shadow-drawer: -8px 0 24px rgb(28 33 43 / 8%), -24px 0 64px rgb(28 33 43 / 6%);
+  --workspace-gap: 16px;
+  --radius-control: 8px;
+  --radius-surface: 12px;
+  --radius-float: 12px;
+  --control-height: 36px;
+  --control-height-compact: 32px;
+  --control-padding: 10px;
+  --field-label-height: 24px;
+}
+* { box-sizing: border-box; }
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
+body { min-height: 100vh; }
+button, input, textarea { font: inherit; line-height: var(--line-ui); }
+h1, h2, h3, h4, h5, h6 { font-weight: var(--weight-semibold); line-height: var(--line-heading); }
+h1 { color: var(--text-heading); font-size: var(--ui-heading); }
+h2 { font-size: var(--ui-title); }
+h3 { font-size: var(--ui-body); }
+h4, h5, h6 { font-size: var(--ui-control); }
+small { font-size: var(--ui-caption); }
+strong, b { font-weight: var(--weight-semibold); }
+code, pre, kbd, samp { font-family: var(--font-mono); }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, :is(select, .select-trigger):focus-visible, summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
