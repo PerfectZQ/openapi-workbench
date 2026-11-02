@@ -6,6 +6,10 @@ Swagger UI 是根据接口描述文件生成交互式文档的现成页面。API
 
 本文比较标准 Swagger UI 的公开能力与本仓库当前实现，不把某个业务项目的定制行为当成 Swagger UI 默认能力。
 
+下图展示替换后的实际界面：左侧接口目录、中间接口参考、右侧请求调试。截图使用仓库自带的虚构 Inventory 示例，只发送本地回显请求；更多画面见[页面示例](frontend-resources.md#页面示例)。
+
+![API Explorer 的三栏界面，使用虚构 Inventory 数据](images/inventory-request.png)
+
 ## 1. 两者做什么，有什么差异
 
 两者都能根据接口描述展示 API、参数、响应模型，并提供 HTTP 请求调试。区别主要在以下方面：

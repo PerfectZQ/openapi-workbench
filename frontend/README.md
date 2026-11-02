@@ -8,6 +8,8 @@ API Explorer 是供用户查看接口文档、填写参数并发送 HTTP 请求�
 
 从零创建接入项目、构建静态页面、用 Go 托管及其运行原理，见[前端资源：构建、接入与部署](../doc/guide/frontend-resources.md)。`npm run build` 输出可安装的组件库；`npm run build:demo` 输出示例 HTML；业务页面由消费项目自己的构建命令生成。
 
+先看[页面示例](../doc/guide/frontend-resources.md#页面示例)：包含接口概览、JSON 请求调试和认证设置，全部使用仓库自带的虚构 Inventory 数据。
+
 ## 项目结构
 
 | 目录 | 职责 |

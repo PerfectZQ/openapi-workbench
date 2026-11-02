@@ -12,6 +12,14 @@
 
 API Explorer 使用自己实现的 React 界面和请求逻辑，没有在内部嵌套 Swagger UI。它支持的协议与接入方式也有差异，迁移前阅读[与 Swagger UI 的区别和替换步骤](doc/guide/swagger-ui-migration.md)。
 
+## 页面示例
+
+下图使用仓库自带的虚构 Inventory 演示：左侧选择接口，中间查看参数与返回结构，右侧编辑 JSON 并查看请求结果。示例只向本机回显 `Notebook`，不连接真实业务服务。
+
+![Inventory 示例：接口说明、JSON 请求体与 200 回显](doc/guide/images/inventory-request.png)
+
+[查看接口概览、请求调试和认证设置三张示例图](doc/guide/frontend-resources.md#页面示例)。
+
 ## 安装与使用
 
 前端接入使用 Node.js 24、React / React DOM 19；使用 SDK 生成器才需要 Go 1.26.4。按需要安装，组合使用时固定同一版本：

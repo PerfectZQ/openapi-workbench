@@ -11,6 +11,30 @@
 
 已有 Swagger UI 的项目先看[功能差异与替换步骤](swagger-ui-migration.md)。以下分别说明维护本工具时如何构建，以及使用本工具的新项目如何接入。
 
+## 页面示例
+
+以下均为本仓库 [`frontend/demo/main.tsx`](../../frontend/demo/main.tsx) 的真实界面截图，视口为 1440 × 900。接口来自虚构的 Inventory 示例，仅访问本机 `127.0.0.1`；没有真实业务数据、账号、Token 或内部服务地址。
+
+### 接口概览
+
+左侧是根据 Swagger 生成的接口目录与筛选项，右侧是 API 名称、版本、服务地址和分组。示例只有“查询数量”和“预览物品”两个接口。
+
+![虚构 Inventory API 的接口目录和概览](images/inventory-overview.png)
+
+### 查看接口并发送 JSON 请求
+
+左侧选择 `PreviewItem`；中间展示 `name` 字段及返回结构；右侧 JSON 编辑器填写 `{"name":"Notebook"}`，发送后得到本地回显的 `200 OK`。这个接口不保存数据。右侧 JSON 编辑器、复制按钮等属于基础控件，而整个三栏页面才是 API Explorer。
+
+![PreviewItem 的字段说明、请求编辑与成功响应](images/inventory-request.png)
+
+### 认证设置
+
+页面可以集中设置 Basic、Bearer、自定义授权和公共 Header。截图中的凭证均为“未配置”；Inventory 示例不要求认证，因此没有填写或展示任何真实凭证。
+
+![未填写凭证的认证与 Header 设置窗口](images/inventory-auth.png)
+
+复现这些画面：按下文启动本地示例，将右上角语言切换为“简体中文”；打开概览，或选择 `Preview an item` 并点击“发送请求”；点击顶部“认证与 Header”查看设置。
+
 ## 1. 分清构建产物
 
 | 产物 | 生成命令（仓库根执行） | 输出与用途 |
