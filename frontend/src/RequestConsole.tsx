@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { CircleAlert, ArrowUpRight, RotateCcw, ShieldCheck, Square, Terminal, Download, Trash2, WrapText, CornerDownLeft, Inbox } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { HelpTip } from '@workbench/ui/HelpTip'
-import { Select } from '@workbench/ui/Select'
+import { HelpTip } from './ui/HelpTip'
+import { Select } from './ui/Select'
 import type { RequestAdapter } from './host'
 import { actionIdentity, type APIOperation, type Specification } from './contract'
 import {
@@ -17,7 +17,7 @@ import {
   supportsAutomaticAuth,
   automaticRequestHeaders,
 } from './request'
-import { CopyButton } from '@workbench/ui/CopyButton'
+import { CopyButton } from './ui/CopyButton'
 import { CodeBlock } from './CodeBlock'
 import { RequestFields } from './RequestFields'
 import { RequestBodyEditor } from './RequestBodyEditor'

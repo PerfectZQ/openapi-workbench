@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HelpTip } from '@workbench/ui/HelpTip'
-import { Select } from '@workbench/ui/Select'
+import { HelpTip } from './ui/HelpTip'
+import { Select } from './ui/Select'
 import { actionIdentity, type APIOperation } from './contract'
 import type { RequestDraft, requestParameters } from './request'
 

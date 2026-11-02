@@ -4,12 +4,12 @@ import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 const { build } = createRequire(new URL('../package.json', import.meta.url))('vite')
 
-test('API 文档独立包构建只依赖通用 UI 与第三方库', async () => {
+test('API Explorer 完整包包含产品 UI、编辑器与语言资源', async () => {
   const root = fileURLToPath(new URL('../', import.meta.url)).replace(/\/$/, '')
   const result = await build({ root, configFile: `${root}/vite.config.ts`, logLevel: 'silent', build: { write: false } })
   const outputs = (Array.isArray(result) ? result : [result]).flatMap(bundle => bundle.output)
   const modules = outputs.filter(item => item.type === 'chunk').flatMap(chunk => Object.keys(chunk.modules))
-  assert.ok(modules.some(id => id.endsWith('/packages/ui/dist/code-editor/JSONEditor.js')))
+  assert.ok(modules.some(id => id.endsWith('/src/ui/code-editor/JSONEditor.tsx')))
   assert.ok(modules.some(id => id === `${root}/src/locales/en-US.json`))
   for (const id of modules.filter(id => id.startsWith('/'))) {
     assert.ok(id.startsWith(`${root}/`), `独立构建依赖项目目录之外的文件：${id}`)

@@ -1,9 +1,10 @@
 {
   "name": "@api-explorer/react",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "assets"
   ],
   "exports": {
     ".": {
@@ -15,12 +16,17 @@
       "default": "./dist/core.js"
     },
     "./style.css": "./dist/api-explorer.css",
-    "./licenses/JetBrainsMono-OFL.txt": "./dist/JetBrainsMono-OFL.txt"
+    "./licenses/JetBrainsMono-OFL.txt": "./dist/JetBrainsMono-OFL.txt",
+    "./ui/*": {
+      "types": "./dist/ui/*.d.ts",
+      "default": "./dist/ui/*.js"
+    },
+    "./ui/styles/*.css": "./dist/ui/styles/*.css",
+    "./assets/*": "./assets/*"
   },
   "scripts": {
-    "build:ui": "npm run build --workspace @workbench/ui",
     "check": "tsc -p tsconfig.json",
-    "build": "npm run build:ui && vite build && vite build --mode core && tsc -p tsconfig.build.json && npm run check",
+    "build": "vite build && vite build --mode core && tsc -p tsconfig.build.json && node build-ui.mjs && npm run check && vite build --config vite.standalone.config.ts",
     "test": "node --test test/*.test.mjs",
     "dev": "vite --config vite.demo.config.ts",
     "build:demo": "vite build --config vite.demo.config.ts",
@@ -31,10 +37,6 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@workbench/ui": "*",
-    "i18next": "^26.4.2",
-    "react-i18next": "^17.0.15",
-    "lucide-react": "^1.33.0",
     "@vitejs/plugin-react": "6.0.5",
     "typescript": "7.0.2",
     "vite": "8.2.1",
@@ -48,12 +50,16 @@
   "engines": {
     "node": ">=24 <25"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/PerfectZQ/openapi-workbench.git",
     "directory": "frontend"
+  },
+  "dependencies": {
+    "lucide-react": "^1.33.0",
+    "react-i18next": "^17.0.15",
+    "i18next": "^26.4.2",
+    "monaco-editor": "0.56.0",
+    "motion": "^13.2.0"
   }
 }

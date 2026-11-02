@@ -1,8 +1,8 @@
 import { ArrowRight, Folder } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { HelpTip } from '@workbench/ui/HelpTip'
+import { HelpTip } from './ui/HelpTip'
 import { formatGroupLabel, operationGroup, type APIOperation, type Specification } from './contract'
-import { CopyButton } from '@workbench/ui/CopyButton'
+import { CopyButton } from './ui/CopyButton'
 
 export function APIOverview({
   spec,

@@ -6,6 +6,6 @@
 
 执行 `./script/bootstrap.sh` 为当前仓库启用 `.githooks/commit-msg`、提交模板和 pull/merge 的 fast-forward-only；不修改全局 Git 配置。
 
-发布前通过 `./script/check.sh`，两个前端包使用相同版本。创建 `vX.Y.Z` tag 后，GitHub Actions 验证、打包并创建同版本 Release：Go module 从 tag 获取，前端从 Release 的 npm tgz 获取。版本检查失败即停止，不回退其他包。
+发布前通过 `./script/check.sh`，前端包与产品使用同一版本。创建 `vX.Y.Z` tag 后，GitHub Actions 验证、打包并创建同版本 Release：Go module 从 tag 获取，前端从 Release 的 npm tgz 获取。版本检查失败即停止，不回退其他包。
 
 消费端固定 GitHub 版本，并保留 go.sum/package-lock.json。升级通过显式改版本、构建和验证完成，不在构建时偷偷跟随 latest。生成器和工作台的协议变更必须同版本验证。

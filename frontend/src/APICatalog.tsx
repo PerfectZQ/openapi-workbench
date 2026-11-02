@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronsDownUp, ChevronsUpDown, Folder, Search, X, BookOpen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Select } from '@workbench/ui/Select'
+import { Select } from './ui/Select'
 import { catalogGroups, operationGroup, operationLifecycle, type APIGroup, type APIOperation } from './contract'
 import './api-catalog.css'
 

@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: API Explorer 与通用 UI 的设计、交互、前端实现和迁移验证。
+description: API Explorer 及其内部全局 UI 的设计、交互、前端实现和迁移验证。
 ---
 
 # 前端设计与实现

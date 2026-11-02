@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HelpTip } from '@workbench/ui/HelpTip'
+import { HelpTip } from './ui/HelpTip'
 import { CircleAlert, Download, X } from 'lucide-react'
 import { actionIdentity, operations, type APIOperation, type Specification } from './contract'
 import {

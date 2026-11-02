@@ -1,6 +1,6 @@
 # 与 Swagger UI 的区别和替换步骤
 
-Swagger UI 是根据接口描述文件生成交互式文档的现成页面。API Explorer 做的是同类工作：读接口描述、展示文档、让用户填写参数并发送请求。本项目重新实现了页面和请求处理代码，没有把 Swagger UI 包在另一层组件里，也不是它的皮肤或插件。
+Swagger UI 是根据接口描述文件生成交互式文档的现成页面。API Explorer 做的是同类工作：读接口描述、展示文档、让用户填写参数并发送请求。API Explorer 是基于 Swagger 的扩展产品，拥有自己的完整界面、请求处理和 SDK 生成能力。
 
 替换的是浏览器中的文档与调试界面。后端 HTTP 接口、Swagger JSON 生成过程、访问权限仍由原服务负责；不能通过替换页面让服务自动增加接口或获得授权。
 
@@ -18,13 +18,13 @@ Swagger UI 是根据接口描述文件生成交互式文档的现成页面。API
 | --- | --- | --- |
 | 接口描述格式 | 支持 Swagger 2.0 与 OpenAPI 3 系列，具体版本取决于所装版本 | 当前实现针对 Swagger 2.0 JSON 及下述自定义扩展；不承诺 OpenAPI 3 兼容 |
 | 页面组织 | 标准布局按标签与接口展开，也可自定义布局 | 接口目录、接口参考和请求调试分区，包含 Schema 引用展示、JSON 编辑器、中英文界面 |
-| 接入入口 | 调用 `SwaggerUIBundle` 或使用 `swagger-ui-react`，传入 URL 或契约对象 | 渲染 React 组件 `APIWorkbench`，通过 `host.loadSpecification()` 提供契约对象 |
-| 契约地址和加载认证 | 可使用 `url`、`spec`、配置文档与拦截器 | 接入项目自己在 `loadSpecification()` 中请求、取票、处理 HTTP 错误和转换公开路径 |
+| 接入入口 | 调用 `SwaggerUIBundle` 或使用 `swagger-ui-react`，传入 URL 或契约对象 | 直接挂载内置页面并指定 Swagger 地址；React 定制通过 `APIWorkbench` |
+| 契约地址和加载认证 | 可使用 `url`、`spec`、配置文档与拦截器 | 默认页面读取指定 Swagger 地址，使用同源登录会话；特殊取票或路径映射可通过 React 定制 |
 | 调试目标 | 可按契约配置请求目标；跨域需后端满足浏览器 CORS 规则 | 请求限制在当前页面同源地址，并拒绝重定向；跨域服务通过同源后端网关接入 |
 | 请求认证 | 根据安全定义提供认证，支持 OAuth 相关配置 | 提供 Basic、Bearer、契约声明的凭证字段及自定义 Header；自动取票走宿主回调，没有内置 OAuth 登录流程 |
 | 凭证保存 | `persistAuthorization` 可配置，默认关闭 | 当前只保留在页面内存，没有持久化开关；手工凭证优先于自动身份，401 不自动重放 |
 | 扩展方式 | 提供 plugins、presets、layout、request/response interceptor 等扩展点 | 使用 `APIWorkbenchHost` 的有限接口，不兼容 Swagger UI 插件和配置对象 |
-| SDK | 页面本身与客户端生成是不同工具职责 | 同仓库提供独立 Go / TS 生成库；页面仅在配置 `loadSDK` 时显示下载，不在浏览器编译 SDK |
+| SDK | 页面本身与客户端生成是不同工具职责 | 同一个 `api-explorer sdk` 命令生成 Go / TypeScript SDK；不在浏览器编译 SDK |
 | 业务 Action 接口 | 标准 Swagger 以 path + method 描述操作，业务扩展需要定制处理 | 识别 `x-api-actions`、`x-api-action` 等扩展，把逻辑 Action 转成实际 Query 参数请求 |
 | 生命周期与枚举说明 | 标准字段与扩展的显示取决于实现及配置 | 识别标准 `deprecated`、`x-api-lifecycle`，以及实现支持的枚举说明扩展 |
 | InnerTOP | 不属于标准 Swagger UI 协议能力 | 宿主配置 `innerTOP` 后可导出导入文件；不会自动在平台创建服务或授予权限 |
@@ -61,28 +61,17 @@ flowchart LR
 SwaggerUIBundle({ url: '/openapi.json', dom_id: '#swagger-ui' })
 ```
 
-**替换后（接入项目的 React 入口）**：
+**替换后**：
 
-```tsx
-import { createRoot } from 'react-dom/client'
-import { APIWorkbench, type APIWorkbenchHost } from '@api-explorer/react'
-import { publicSpecification } from '@api-explorer/react/core'
-import '@api-explorer/react/style.css'
-
-const host: APIWorkbenchHost = {
-  async loadSpecification() {
-    const response = await fetch('/openapi.json', { cache: 'no-store', redirect: 'error' })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    return publicSpecification(await response.json(), window.location.origin)
-  },
-}
-
-createRoot(document.getElementById('root')!).render(<APIWorkbench host={host} locale="zh-CN" />)
+```bash
+api-explorer assets --spec /openapi.json --out ./public/api-explorer
 ```
 
-HTML 中提供 `<div id="root"></div>`。`host` 放在组件外保持引用稳定，避免每次渲染重新加载契约。这里沿用 `/openapi.json`；接入项目有自己的契约地址时替换该地址。完整安装、HTML、Vite 配置和部署程序见[前端资源指南](frontend-resources.md)。
+将输出目录挂载到原来的文档页面路径即可。Go 可直接挂载 `explorer.Handler("/openapi.json")`；完整示例见[接入指南](quick-start.md)。不需要建立 React 工程、编写 HTML 或配置 Vite。
 
-## 3. 旧配置如何迁移
+## 3. 特殊配置如何迁移
+
+以下回调用于已有定制需求的 React 接入；普通安装只需指定 Swagger 地址。
 
 | 旧配置或职责 | 新接入位置 | 迁移时要做什么 |
 | --- | --- | --- |
@@ -100,9 +89,9 @@ API 请求的认证和契约文件的访问权限必须分别保留。宿主的�
 ## 4. 按什么顺序替换
 
 1. 确认实际契约是支持范围内的 Swagger 2.0；列出上传、OAuth、自定义插件等现有使用点，按上面的边界评估。
-2. 安装 `api-explorer-react.tgz`，建立独立 React 页面入口，接入现有契约地址；先保留旧页面用于核对。
+2. 安装 API Explorer，导出或直接挂载内置页面，指定现有 Swagger 地址；先保留旧页面用于核对。
 3. 迁移契约加载认证、API 调试取票、自动 Header 和网关路径，保持后端权限检查不变。
-4. 构建接入项目，生成完整 `index.html`、JS、CSS、字体与许可资源；将旧文档页面的静态资源路由改为服务新产物。Go embed 方式需要重新编译二进制。
+4. 将旧文档页面路由指向产品自带资源；Go 直接挂载方式需要重新编译服务。
 5. 在实际环境核对契约加载、关键接口参数和响应、凭证优先级、401/403、网关前缀与子路径资源。确认原页面依赖的能力有对应实现后再切换入口。
 6. 删除不再使用的 `swagger-ui` / `swagger-ui-react` 前端依赖、初始化代码和旧资源复制步骤；仍承担 Swagger JSON 输出的后端包继续保留。
 

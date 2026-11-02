@@ -17,9 +17,11 @@ openapi-workbench/
 
 通用层只依赖标准库及本目录内代码，不导入业务 Handler、Service、数据库或项目运行配置。它不识别业务路由，也不内置业务包名、客户端名和输出位置。
 
-消费项目的命令入口负责 Provider 注册、输出配置和公开分组/方法命名。业务命名规则通过 `Generator.NameMethod` 提供；通用层先归一化 Action 文档路径，再调用命名规则并校验方法重名。
+普通接入通过 `api-explorer sdk --spec ./swagger.json --out ./sdk` 生成完整工程。`sdkgen/project` 负责命令默认的 Provider 装配、命名和运行时模板，默认生成 Go / TypeScript，方法归 API 分组。完整工程支持标准 Swagger REST 请求及已实现的 `x-api-*` REST 投影；签名 Action 入口由 InnerTOPVersion 与认证回调显式开启，产品不内置业务 Action 路由。
 
-消费项目的 Go / TypeScript SDK 是独立客户端工程，保留各自的请求编解码、认证集成、依赖与使用说明。Provider 生成操作、模型及 `config.gen.go` / `src/config.gen.ts`，统一拥有客户端配置校验和请求 URL 拼接；只有同时配置 `ArchivePath` 和 `ArchiveRoot` 时才归档，Git 安装的消费方仅配置 `Directory`；不会生成或初始化业务服务，也不会将依赖安装目录和构建缓存装入归档。
+已有专属 SDK 的消费项目可继续自行配置 Provider 注册、输出与命名。业务命名规则通过 `Generator.NameMethod` 提供；通用层先归一化 Action 文档路径，再调用命名规则并校验方法重名。
+
+消费项目的 Go / TypeScript SDK 是独立客户端工程，保留各自的请求编解码、认证集成、依赖与使用说明。Provider 生成操作、模型及 `config.gen.go` / `src/config.gen.ts`，统一拥有客户端配置校验和请求 URL 拼接；只有同时配置 `ArchivePath` 和 `ArchiveRoot` 时才归档，Git 安装的消费方仅配置 `Directory`；Provider 自身不生成客户端运行时；完整产品命令由 `sdkgen/project/templates/` 补齐客户端、工程配置与说明，不会生成或初始化业务服务，也不会将依赖安装目录和构建缓存装入归档。
 
 ## 客户端 BasePath
 

@@ -1,0 +1,164 @@
+package sdk
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
+
+// APIError reports both HTTP failures and ResponseMetadata.Error, including
+// business errors returned with HTTP 200. It never includes request credentials.
+type APIError struct {
+	StatusCode int
+	Code       string
+	Message    string
+	RequestID  string
+	Field      string
+	Retryable  bool
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("sdk: HTTP %d %s: %s (request %s)", e.StatusCode, e.Code, e.Message, e.RequestID)
+}
+
+// Ptr constructs optional scalar fields without conflating zero with omission.
+func Ptr[T any](value T) *T { return &value }
+
+type parameter struct {
+	name, in, value string
+	required        bool
+}
+type operation struct {
+	method, path, action string
+	antiReplay, innerTOP bool
+}
+
+func (c *Client) request(ctx context.Context, op operation, params []parameter, body any, output any) (*http.Response, error) {
+	requestPath := op.path
+	query := url.Values{}
+	headers := http.Header{"Accept": {"application/json"}}
+	for _, p := range params {
+		if p.required && p.value == "" {
+			return nil, fmt.Errorf("sdk: %s is required", p.name)
+		}
+		switch p.in {
+		case "path":
+			if p.value == "." || p.value == ".." {
+				return nil, fmt.Errorf("sdk: invalid path parameter %s", p.name)
+			}
+			requestPath = strings.ReplaceAll(requestPath, "{"+p.name+"}", url.PathEscape(p.value))
+		case "query":
+			query.Add(p.name, p.value)
+		case "header":
+			headers.Set(p.name, p.value)
+		}
+	}
+	if strings.ContainsAny(requestPath, "{}") {
+		return nil, errors.New("sdk: missing path parameter")
+	}
+	if op.action != "" {
+		query.Set("Action", op.action)
+	}
+	if version := c.config.InnerTOPVersion; version != "" {
+		if !op.innerTOP || op.action == "" {
+			return nil, errors.New("sdk: this operation has no InnerTOP Action route")
+		}
+		if len(op.action) >= 8 {
+			if _, err := time.Parse("20060102", op.action[len(op.action)-8:]); err == nil && !strings.HasSuffix(op.action, strings.ReplaceAll(version, "-", "")) {
+				return nil, errors.New("sdk: InnerTOP version does not match this operation")
+			}
+		}
+		requestPath = "/"
+		query.Set("Action", strings.TrimSuffix(op.action, strings.ReplaceAll(version, "-", "")))
+		query.Set("Version", version)
+	} else {
+		if op.antiReplay {
+			headers.Set("X-Date", time.Now().UTC().Add(15*time.Minute).Format(time.RFC3339))
+			headers.Set("X-Expires", "300")
+		}
+	}
+	var payload []byte
+	if body != nil {
+		var err error
+		payload, err = json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("sdk: encode request: %w", err)
+		}
+		headers.Set("Content-Type", "application/json")
+	}
+	endpoint := c.requestURL(requestPath, query)
+	req, err := http.NewRequestWithContext(ctx, op.method, endpoint, bytes.NewReader(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header = headers
+	if c.config.Authenticate != nil {
+		if err = c.config.Authenticate(ctx, req); err != nil {
+			return nil, fmt.Errorf("sdk: authenticate: %w", err)
+		}
+	}
+	response, err := c.config.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	// File responses are caller-owned and must be closed.
+	if output == nil && response.StatusCode >= 200 && response.StatusCode < 300 {
+		return response, nil
+	}
+	defer response.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(response.Body, 32<<20+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > 32<<20 {
+		return nil, errors.New("sdk: response exceeds 32 MiB")
+	}
+	var envelope struct {
+		Code             string `json:"code"`
+		Detail           string `json:"detail"`
+		Field            string `json:"field"`
+		Retryable        bool   `json:"retryable"`
+		RequestID        string `json:"request_id"`
+		ResponseMetadata struct {
+			RequestID string `json:"RequestId"`
+			Error     *struct {
+				Code, Message, Field string
+				Retryable            bool
+			}
+		}
+	}
+	_ = json.Unmarshal(data, &envelope)
+	metadata := envelope.ResponseMetadata
+	if metadata.Error != nil || response.StatusCode < 200 || response.StatusCode >= 300 {
+		failure := &APIError{StatusCode: response.StatusCode, RequestID: metadata.RequestID, Message: http.StatusText(response.StatusCode)}
+		if metadata.Error != nil {
+			failure.Code, failure.Message = metadata.Error.Code, metadata.Error.Message
+			failure.Field, failure.Retryable = metadata.Error.Field, metadata.Error.Retryable
+		} else if envelope.Code != "" {
+			failure.Code, failure.Message, failure.RequestID = envelope.Code, envelope.Detail, envelope.RequestID
+			failure.Field, failure.Retryable = envelope.Field, envelope.Retryable
+		}
+		if failure.RequestID == "" {
+			failure.RequestID = response.Header.Get("X-Request-ID")
+		}
+		if failure.RequestID == "" {
+			failure.RequestID = response.Header.Get("X-Tt-Logid")
+		}
+		return nil, failure
+	}
+	if output != nil && len(bytes.TrimSpace(data)) > 0 {
+		decoder := json.NewDecoder(bytes.NewReader(data))
+		decoder.UseNumber()
+		if err = decoder.Decode(output); err != nil {
+			return nil, fmt.Errorf("sdk: decode response: %w", err)
+		}
+	}
+	return response, nil
+}

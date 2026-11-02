@@ -1,32 +1,27 @@
 # API Explorer
 
-API Explorer 是供用户查看接口文档、填写参数并发送 HTTP 请求的完整网页界面。它读取 Swagger 2.0 JSON 文件中的接口描述，自动展示接口列表、参数与返回字段。接入网站负责提供 JSON 地址和登录认证。
+API Explorer 是基于 Swagger 的完整产品。普通接入直接挂载随产品交付的前端资源，见[安装与使用](../doc/guide/quick-start.md)；本页仅面向需要 React 深度定制或修改产品源码的开发者。
 
-`@api-explorer/react` 是这个界面的安装包，`APIWorkbench` 是代码中渲染它的 React 组件名；这里的“组件”是整页界面，不是一个按钮。`@workbench/ui` 则是下拉选择、复制按钮、JSON 展示与编辑器等基础控件的集合，不读取 Swagger，不负责接口文档。普通接入只装前一个包，它已包含所需控件。
-
-文中的“宿主”就是接入这个页面的你自己的项目；“契约”就是描述接口地址、参数、返回值与认证方式的 JSON 文件。与标准 Swagger UI 的兼容范围和替换步骤见[迁移说明](../doc/guide/swagger-ui-migration.md)。
-
-从零创建接入项目、构建静态页面、用 Go 托管及其运行原理，见[前端资源：构建、接入与部署](../doc/guide/frontend-resources.md)。`npm run build` 输出可安装的组件库；`npm run build:demo` 输出示例 HTML；业务页面由消费项目自己的构建命令生成。
-
-先看[页面示例](../doc/guide/frontend-resources.md#页面示例)：包含接口概览、JSON 请求调试和认证设置，全部使用仓库自带的虚构 Inventory 数据。
+`@api-explorer/react` 是唯一前端包，包含整页应用及全局 UI、编辑器、语言、样式和预构建页面。`APIWorkbench` 是 React 入口名，`ui/` 是产品内部目录。所有入口共用一个版本与发布包。
 
 ## 项目结构
 
 | 目录 | 职责 |
 | --- | --- |
 | `src/` | `@api-explorer/react` 的组件、契约与请求处理、InnerTOP 转换、语言资源和样式 |
-| `packages/ui/` | `@workbench/ui` 通用控件与编辑器；拥有自己的编译产物和包入口 |
+| `src/ui/` | 产品全局控件、编辑器、主题与语言资源 |
+| `standalone/`、`assets/` | 默认产品页面源码与可直接挂载的完整构建产物 |
 | `demo/` | 通过公开包入口接入的 Inventory 示例 |
 | `test/` | 通用认证、路径映射、导出及实际构建依赖边界测试 |
 
 整个目录拥有独立的 `package.json`、`package-lock.json`、TypeScript 与 Vite 配置。Node.js 要求 24，不需要 Go 或业务服务即可构建库和查看示例；接入项目直接安装发布包。
 
-## 接入
+## React 定制接入
 
 在你自己的 React 项目中安装（需要 React / React DOM 19）：
 
 ```bash
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.2/api-explorer-react.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.3.0/api-explorer-react.tgz
 ```
 
 安装包包含编译后的代码与类型声明，所需基础控件、中英文文案、JSON 编辑器和字体已包含其中。导入页面组件及其样式：
@@ -77,8 +72,15 @@ npm run dev
 npm run build:demo
 ```
 
-Inventory 示例在 `http://127.0.0.1:5194` 提供本地计数和 JSON 回显，不保存数据。示例读取 `dist` 包入口；修改组件或通用控件后重新执行 `npm run build`。通用控件也只导出 `dist`，消费方无需 TypeScript 源码。
+Inventory 示例在 `http://127.0.0.1:5194` 提供本地计数和 JSON 回显，不保存数据。示例读取 `dist` 包入口；修改产品源码后重新执行 `npm run build`。全部入口只导出构建产物，消费方不引用 TypeScript 源码。
 
-`npm run build` 依次编译通用 UI、构建组件与无 UI 的 core 入口、生成声明，最后检查包括示例在内的项目类型。React 保持为 peer dependency；其他组件依赖和字体包含在 API Explorer 分发包中。`npm pack` 自动重建，仅交付 `dist` 和 README。字体许可证可从 `@api-explorer/react/licenses/JetBrainsMono-OFL.txt` 读取，宿主分发页面时应保留。
+`npm run build` 统一生成整页 React 入口、core、产品 UI 子路径和类型声明，并构建 `assets/` 完整静态页面。`npm pack` 自动构建，仅交付 `dist`、`assets` 与 README。Go 包嵌入同一套 `assets/`，发布源码必须包含这些产物。字体许可随页面分发，也可从 `@api-explorer/react/licenses/JetBrainsMono-OFL.txt` 获取。
 
-独立 UI 包使用 Monaco 的 Vite Worker 导入约定；直接消费 UI 包的 Vite 应用应将 `react`、`react-dom`、`react-i18next`、`monaco-editor` 与 `motion` 配置为 `resolve.dedupe`，保证本地链接依赖与应用共用运行时。API Explorer 的组件分发包已包含编辑器与 Worker，普通接入只需要 React 和 React DOM。
+宿主已有其他页面需要复用产品控件时，可从同一包的 `@api-explorer/react/ui/*` 导入，例如 `@api-explorer/react/ui/Select`。这些子路径保留 React、i18n 和 Monaco 的宿主运行时，Vite 配置如下：
+
+```ts
+resolve: { dedupe: ['react', 'react-dom', 'react-i18next', 'monaco-editor', 'motion'] },
+optimizeDeps: { exclude: ['@api-explorer/react'] },
+```
+
+组件按需使用已有主题和 i18n 上下文；Monaco Worker 由 Vite 处理。普通页面挂载无需这些配置。

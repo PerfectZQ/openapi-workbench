@@ -1,0 +1,288 @@
+import { Buffer } from 'node:buffer';
+import { parse, stringify } from 'lossless-json';
+import { configureClient, requestURL, type ClientConfig } from './config.gen.js';
+export type { ClientConfig } from './config.gen.js';
+
+/** JSON values preserve integers beyond Number.MAX_SAFE_INTEGER as bigint. */
+export type JsonValue = null | boolean | string | number | bigint | JsonValue[] | { [key: string]: JsonValue };
+export type TokenSource = (signal?: AbortSignal) => string | Promise<string>;
+export type Authenticate = (request: Request) => void | Promise<void>;
+export interface RequestOptions { signal?: AbortSignal }
+export interface Parameter {
+  name: string;
+  in: 'path' | 'query' | 'header' | 'body';
+  required?: boolean;
+}
+export interface Operation {
+  method: string;
+  path: string;
+  action?: string;
+  innerTOP?: boolean;
+  antiReplay?: boolean;
+  parameters?: readonly Parameter[];
+  file?: boolean;
+}
+export interface BusinessOperation extends Omit<Operation, 'parameters'> {
+  action: string;
+  version: string;
+  parameters?: readonly { name: string; in: 'path' | 'query' }[];
+  inputJSON?: readonly string[];
+  outputJSON?: readonly string[];
+}
+
+/** An HTTP failure or ResponseMetadata.Error, including errors sent with HTTP 200. */
+export class APIError extends Error {
+  readonly statusCode: number;
+  readonly code: string;
+  readonly requestId: string;
+  readonly field: string;
+  readonly retryable: boolean;
+  constructor(statusCode: number, code: string, message: string, requestId = '', field = '', retryable = false) {
+    super(message);
+    this.name = 'APIError';
+    this.statusCode = statusCode;
+    this.code = code;
+    this.requestId = requestId;
+    this.field = field;
+    this.retryable = retryable;
+  }
+}
+
+/** Decode JSON integers without first rounding them through a JavaScript number. */
+export function parseJSON(text: string): unknown {
+  return parse(text, null, (token: string) => {
+    if (/^-?(?:0|[1-9]\d*)$/.test(token)) {
+      const integer = BigInt(token);
+      return integer >= BigInt(Number.MIN_SAFE_INTEGER) && integer <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(integer) : integer;
+    }
+    const number = Number(token);
+    if (!Number.isFinite(number)) throw new Error('sdk: JSON number exceeds the finite number range');
+    return number;
+  });
+}
+
+/** bigint is sent as an unquoted JSON integer; already-rounded number inputs are rejected. */
+export function stringifyJSON(value: unknown): string {
+  const text = stringify(value, (_key: string, item: unknown) => {
+    if (typeof item === 'number' && (!Number.isFinite(item) || (Number.isInteger(item) && !Number.isSafeInteger(item)))) {
+      throw new Error('sdk: unsafe integer number; use bigint or the API\'s existing string field');
+    }
+    return item;
+  });
+  if (text === undefined) throw new Error('sdk: value is not JSON serializable');
+  return text;
+}
+
+const maxResponseBytes = 32 * 1024 * 1024;
+type ParameterValue = Parameter & { value: unknown };
+
+/** Shared transport used by generated services; it performs no retries. */
+export class ClientRuntime {
+  private readonly config: Readonly<ClientConfig>;
+  private readonly fetcher: typeof globalThis.fetch;
+  constructor(config: ClientConfig) {
+    this.config = configureClient(config);
+    this.fetcher = config.fetch ?? globalThis.fetch;
+  }
+
+  async request<T>(operation: Operation, input: unknown = {}, options: RequestOptions = {}): Promise<T> {
+    const fields = object(input, 'request');
+    const parameters: ParameterValue[] = [];
+    let body: unknown;
+    for (const parameter of operation.parameters ?? []) {
+      const value = fields[parameter.name];
+      if (parameter.in === 'body') {
+        if (parameter.required && value === undefined) throw new Error(`sdk: ${parameter.name} is required`);
+        body = value;
+      } else if (value !== undefined && value !== null) {
+        parameters.push({ ...parameter, value });
+      } else if (parameter.required) {
+        throw new Error(`sdk: ${parameter.name} is required`);
+      }
+    }
+    return await this.send(operation, parameters, body, options) as T;
+  }
+
+  /** Business methods expose the native result rather than the HTTP envelope. */
+  async businessRequest<T>(operation: BusinessOperation, input: unknown = {}, options: RequestOptions = {}): Promise<T> {
+    const request = object(parseJSON(stringifyJSON(input)), 'business request');
+    if (this.config.protocol === 'action' && !this.config.innerTOPVersion) throw new Error('sdk: Action gateway requires innerTOPVersion and authenticate; use REST for direct service calls');
+    const action = Boolean(this.config.innerTOPVersion);
+    if (this.config.innerTOPVersion && this.config.innerTOPVersion !== operation.version) {
+      throw new Error(`sdk: ${operation.action} requires InnerTOP version ${operation.version} (configured ${this.config.innerTOPVersion})`);
+    }
+    const parameters: ParameterValue[] = [];
+    let wire: Operation = { method: operation.method, path: operation.path, file: operation.file && !action };
+    let body: unknown = request;
+    if (action) {
+      for (const path of operation.inputJSON ?? []) project(request, path.split('.'), true);
+      wire = { method: 'POST', path: '/', action: operation.action, innerTOP: true };
+      parameters.push({ name: 'Version', in: 'query', value: operation.version, required: true });
+      body = { Request: request };
+    } else {
+      for (const binding of operation.parameters ?? []) {
+        const value = request[binding.name];
+        if (value !== undefined && value !== null) {
+          parameters.push({ ...binding, value, required: binding.in === 'path' });
+        }
+        delete request[binding.name];
+      }
+      if (Object.keys(request).length === 0 || operation.method.toUpperCase() === 'GET') body = undefined;
+    }
+    const response = await this.send(wire, parameters, body, options);
+    if (operation.file && !action) {
+      const file = response as Response;
+      return {
+        name: attachmentFilename(file.headers.get('Content-Disposition') ?? ''),
+        content_type: file.headers.get('Content-Type') ?? '',
+        content: Buffer.from(await file.arrayBuffer()).toString('base64'),
+      } as T;
+    }
+    const envelope = object(response, 'business response');
+    const result = action ? envelope.Result : envelope.data;
+    if (result === undefined || result === null) throw new Error('sdk: business response is missing its result');
+    if (action) {
+      for (const path of operation.outputJSON ?? []) project(result, path.split('.'), false);
+    }
+    return result as T;
+  }
+
+  private async send(operation: Operation, parameters: readonly ParameterValue[], body: unknown, options: RequestOptions): Promise<unknown> {
+    let path = operation.path;
+    const query = new URLSearchParams();
+    const headers = new Headers({ Accept: 'application/json' });
+    for (const parameter of parameters) {
+      const value = parameterText(parameter.value);
+      if (parameter.required && value === '') throw new Error(`sdk: ${parameter.name} is required`);
+      if (parameter.in === 'path') {
+        if (value === '.' || value === '..') throw new Error(`sdk: invalid path parameter ${parameter.name}`);
+        path = path.replaceAll(`{${parameter.name}}`, encodeURIComponent(value));
+      } else if (parameter.in === 'query') {
+        query.append(parameter.name, value);
+      } else if (parameter.in === 'header') {
+        headers.set(parameter.name, value);
+      }
+    }
+    if (/[{}]/.test(path)) throw new Error('sdk: missing path parameter');
+    if (operation.action) query.set('Action', operation.action);
+    const version = this.config.innerTOPVersion;
+    if (version) {
+      if (!operation.innerTOP || !operation.action) throw new Error('sdk: this operation has no InnerTOP Action route');
+      const suffix = operation.action.match(/\d{8}$/)?.[0];
+      if (suffix && suffix !== version.replaceAll('-', '')) throw new Error('sdk: InnerTOP version does not match this operation');
+      path = '/';
+      query.set('Action', suffix ? operation.action.slice(0, -8) : operation.action);
+      query.set('Version', version);
+    } else {
+      if (operation.antiReplay) {
+        headers.set('X-Date', new Date(Date.now() + 15 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z'));
+        headers.set('X-Expires', '300');
+      }
+    }
+    const url = requestURL(this.config, path, query);
+    const payload = body === undefined ? undefined : stringifyJSON(body);
+    if (payload !== undefined) headers.set('Content-Type', 'application/json');
+    const timeout = AbortSignal.timeout(this.config.timeoutMs ?? 30_000);
+    const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+    signal.throwIfAborted();
+    const request = new Request(url, { method: operation.method, headers, body: payload, redirect: 'manual', signal });
+    if (this.config.authenticate) await this.config.authenticate(request);
+    signal.throwIfAborted();
+    const response = await this.fetcher(request);
+    const data = await readBounded(response);
+    let output: unknown;
+    if (!operation.file || !response.ok) {
+      try { output = data.length ? parseJSON(new TextDecoder('utf-8', { fatal: true }).decode(data)) : undefined; }
+      catch (error) { if (response.ok) throw new Error('sdk: decode response failed', { cause: error }); }
+    }
+    const envelope = record(output);
+    const metadata = record(envelope?.ResponseMetadata);
+    const failure = record(metadata?.Error);
+    if (failure || !response.ok) {
+      const problem = typeof envelope?.code === 'string' && envelope.code !== '';
+      throw new APIError(response.status,
+        text(failure?.Code ?? (problem ? envelope?.code : undefined)),
+        text(failure?.Message ?? (problem ? envelope?.detail : undefined)) || response.statusText,
+        text(metadata?.RequestId ?? (problem ? envelope?.request_id : undefined)) || response.headers.get('X-Request-ID') || response.headers.get('X-Tt-Logid') || '',
+        text(failure?.Field ?? (problem ? envelope?.field : undefined)),
+        (failure?.Retryable ?? (problem ? envelope?.retryable : false)) === true);
+    }
+    if (operation.file) return new Response(data, { status: response.status, statusText: response.statusText, headers: response.headers });
+    return output;
+  }
+}
+
+async function readBounded(response: Response): Promise<Uint8Array<ArrayBuffer>> {
+  if (!response.body) return new Uint8Array();
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxResponseBytes) {
+        await reader.cancel();
+        throw new Error('sdk: response exceeds 32 MiB');
+      }
+      chunks.push(value);
+    }
+  } finally { reader.releaseLock(); }
+  const result = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.byteLength; }
+  return result;
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+}
+function object(value: unknown, description: string): Record<string, unknown> {
+  const result = record(value);
+  if (!result) throw new Error(`sdk: ${description} must be an object`);
+  return result;
+}
+function text(value: unknown): string { return typeof value === 'string' ? value : ''; }
+function parameterText(value: unknown): string {
+  if (typeof value === 'object' || typeof value === 'number') return stringifyJSON(value);
+  return String(value);
+}
+function project(value: unknown, path: readonly string[], encode: boolean): void {
+  if (value === null || value === undefined || path.length === 0) return;
+  if (path[0] === '*') {
+    if (!Array.isArray(value)) throw new Error('sdk: JSON projection expects an array');
+    for (const item of value) project(item, path.slice(1), encode);
+    return;
+  }
+  const parent = object(value, 'JSON projection');
+  const key = path[0]!;
+  if (!Object.hasOwn(parent, key)) return;
+  if (path.length > 1) { project(parent[key], path.slice(1), encode); return; }
+  if (encode) { parent[key] = stringifyJSON(parent[key]); return; }
+  if (typeof parent[key] !== 'string') throw new Error(`sdk: Action result field ${key} is not a JSON string`);
+  parent[key] = parseJSON(parent[key]);
+}
+function attachmentFilename(disposition: string): string {
+  const encoded = /(?:^|;)\s*filename\*\s*=\s*UTF-8''([^;]+)/i.exec(disposition);
+  if (encoded) {
+    try { return decodeURIComponent(encoded[1]!.trim()); } catch { throw new Error('sdk: invalid attachment filename'); }
+  }
+  const name = /(?:^|;)\s*filename\s*=\s*(?:"((?:\\.|[^"\\])*)"|([^;]+))/i.exec(disposition);
+  return name ? (name[1] ?? name[2]?.trim() ?? '').replace(/\\(.)/g, '$1') : '';
+}
+function tokenHeader(header: string, source: TokenSource): Authenticate {
+  return async (request) => {
+    if (typeof source !== 'function') throw new Error('sdk: token source is required');
+    const token = await source(request.signal);
+    if (typeof token !== 'string' || !token.trim()) throw new Error('sdk: empty credential');
+    request.headers.set(header, token);
+  };
+}
+export function authorization(source: TokenSource): Authenticate { return tokenHeader('Authorization', source); }
+export function basicAuth(username: string, password: string): Authenticate {
+  return (request) => {
+    if (!username || !password) throw new Error('sdk: Basic credentials are required');
+    request.headers.set('Authorization', `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`);
+  };
+}

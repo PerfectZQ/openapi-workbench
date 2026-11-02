@@ -1,5 +1,5 @@
-@import '@workbench/ui/styles/base.css';
-@import '@workbench/ui/styles/scrollbars.css';
+@import './ui/styles/base.css';
+@import './ui/styles/scrollbars.css';
 @font-face {
   font-family: 'JetBrains Mono';
   src: url('./assets/jetbrains-mono/regular.woff2') format('woff2');

@@ -1,9 +1,9 @@
 import { useState, type CSSProperties } from 'react'
 import { Braces, Check, CircleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import JSONEditor from '@workbench/ui/code-editor/JSONEditor'
-import { JsonCodeBlock } from '@workbench/ui/JsonCodeBlock'
-import { CopyButton } from '@workbench/ui/CopyButton'
+import JSONEditor from './ui/code-editor/JSONEditor'
+import { JsonCodeBlock } from './ui/JsonCodeBlock'
+import { CopyButton } from './ui/CopyButton'
 import './request-body-editor.css'
 
 export function RequestBodyEditor({

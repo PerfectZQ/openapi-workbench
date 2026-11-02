@@ -1,0 +1,184 @@
+package sdk
+
+import (
+	"bytes"
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime"
+	"strings"
+)
+
+type businessParameter struct{ name, in string }
+type businessOperation struct {
+	method, path, action, version string
+	parameters                    []businessParameter
+	inputJSON, outputJSON         []string
+	file                          bool
+}
+
+// businessRequest keeps one typed request/result while adapting only wire locations and envelopes.
+func (c *Client) businessRequest(ctx context.Context, op businessOperation, input, output any) error {
+	data, err := json.Marshal(input)
+	if err != nil {
+		return err
+	}
+	request := map[string]any{}
+	if err := decodeBusinessJSON(data, &request); err != nil {
+		return err
+	}
+	var params []parameter
+	var body any = request
+	if c.config.Protocol == "action" && c.config.InnerTOPVersion == "" {
+ return fmt.Errorf("sdk: Action gateway requires InnerTOPVersion and Authenticate; use REST for direct service calls")
+ }
+ action := c.config.InnerTOPVersion != ""
+	version := op.version
+	if version == "" {
+		version = BusinessVersion
+	}
+	if c.config.InnerTOPVersion != "" && c.config.InnerTOPVersion != version {
+		return fmt.Errorf("sdk: %s requires InnerTOP version %s (configured %s)", op.action, version, c.config.InnerTOPVersion)
+	}
+	method, path := op.method, op.path
+	if action {
+		for _, path := range op.inputJSON {
+			if err := projectBusinessJSON(request, strings.Split(path, "."), true); err != nil {
+				return err
+			}
+		}
+		method, path = "POST", "/"
+		params = append(params, parameter{"Action", "query", op.action, true}, parameter{"Version", "query", version, true})
+		body = map[string]any{"Request": request}
+	} else {
+		for _, binding := range op.parameters {
+			value, exists := request[binding.name]
+			if exists && value != nil {
+				text := fmt.Sprint(value)
+				if array, ok := value.([]any); ok {
+					encoded, err := json.Marshal(array)
+					if err != nil {
+						return err
+					}
+					text = string(encoded)
+				}
+				params = append(params, parameter{binding.name, binding.in, text, binding.in == "path"})
+			}
+			delete(request, binding.name)
+		}
+		if len(request) == 0 || method == "GET" {
+			body = nil
+		}
+	}
+	wire := operation{method: method, path: path}
+	if action {
+		wire.action, wire.innerTOP = op.action, true
+	}
+	if op.file && !action {
+		response, err := c.request(ctx, wire, params, body, nil)
+		if err != nil {
+			return err
+		}
+		defer response.Body.Close()
+		content, err := io.ReadAll(io.LimitReader(response.Body, 32<<20+1))
+		if err != nil {
+			return err
+		}
+		if len(content) > 32<<20 {
+			return fmt.Errorf("sdk: response exceeds 32 MiB")
+		}
+		_, disposition, _ := mime.ParseMediaType(response.Header.Get("Content-Disposition"))
+		data, err := json.Marshal(map[string]any{"name": disposition["filename"], "content_type": response.Header.Get("Content-Type"), "content": base64.StdEncoding.EncodeToString(content)})
+		if err != nil {
+			return err
+		}
+		return decodeBusinessJSON(data, output)
+	}
+	var response json.RawMessage
+	if _, err := c.request(ctx, wire, params, body, &response); err != nil {
+		return err
+	}
+	var envelope struct {
+		Data   json.RawMessage `json:"data"`
+		Result json.RawMessage `json:"Result"`
+	}
+	if err := decodeBusinessJSON(response, &envelope); err != nil {
+		return err
+	}
+	result := envelope.Data
+	if action {
+		result = envelope.Result
+		if len(op.outputJSON) > 0 {
+			var object any
+			if err := decodeBusinessJSON(result, &object); err != nil {
+				return err
+			}
+			for _, path := range op.outputJSON {
+				if err := projectBusinessJSON(object, strings.Split(path, "."), false); err != nil {
+					return err
+				}
+			}
+			var err error
+			result, err = json.Marshal(object)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return decodeBusinessJSON(result, output)
+}
+
+func decodeBusinessJSON(data []byte, target any) error {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	return decoder.Decode(target)
+}
+
+func projectBusinessJSON(value any, path []string, encode bool) error {
+	if value == nil || len(path) == 0 {
+		return nil
+	}
+	if path[0] == "*" {
+		items, ok := value.([]any)
+		if !ok {
+			return fmt.Errorf("sdk: JSON projection expects an array")
+		}
+		for _, item := range items {
+			if err := projectBusinessJSON(item, path[1:], encode); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	object, ok := value.(map[string]any)
+	if !ok {
+		return fmt.Errorf("sdk: JSON projection expects an object")
+	}
+	child, exists := object[path[0]]
+	if !exists {
+		return nil
+	}
+	if len(path) > 1 {
+		return projectBusinessJSON(child, path[1:], encode)
+	}
+	if encode {
+		data, err := json.Marshal(child)
+		if err != nil {
+			return err
+		}
+		object[path[0]] = string(data)
+		return nil
+	}
+	text, ok := child.(string)
+	if !ok {
+		return fmt.Errorf("sdk: Action result field %s is not a JSON string", path[0])
+	}
+	var decoded any
+	if err := decodeBusinessJSON([]byte(text), &decoded); err != nil {
+		return err
+	}
+	object[path[0]] = decoded
+	return nil
+}
