@@ -7,10 +7,10 @@
 Go 1.26.4、Node.js 24。消费项目固定同一版本：
 
 ```bash
-go get github.com/PerfectZQ/openapi-workbench@v0.1.0
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.0/api-explorer-react.tgz
+go get github.com/PerfectZQ/openapi-workbench@v0.1.1
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/api-explorer-react.tgz
 # 需要单独复用控件时安装
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.0/workbench-ui.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/workbench-ui.tgz
 ```
 
 Go 导入 `contract` 与 `sdkgen`；前端导入 `@api-explorer/react`、`@api-explorer/react/core`，通用控件通过 `@workbench/ui/*` 使用。SDK 生成的语言可单独或组合选择，项目专属名称和输出位置由调用方提供。工作台的契约加载、认证、路径和 SDK 下载同样由宿主注入。
@@ -35,7 +35,7 @@ Go 导入 `contract` 与 `sdkgen`；前端导入 `@api-explorer/react`、`@api-e
 ```bash
 ./script/bootstrap.sh
 ./script/check.sh
-./script/package.sh v0.1.0
+./script/package.sh v0.1.1
 # 示例工作台
 npm --prefix frontend run dev
 ```

@@ -1,6 +1,6 @@
 # OpenAPI 与 SDK 生成规范
 
-SDK 生成器属于项目业务无关的 OpenAPI 工具层，统一位于 ``。当前输入为 Swagger 2.0，以及项目采用的 `x-api-*` 双协议扩展；不宣称支持任意 OpenAPI 版本或全部 Schema 特性。
+SDK 生成器属于项目业务无关的 OpenAPI 工具层，统一位于 `contract/` 与 `sdkgen/`。当前输入为 Swagger 2.0，以及项目采用的 `x-api-*` 双协议扩展；不宣称支持任意 OpenAPI 版本或全部 Schema 特性。
 
 ## 目录与边界
 
@@ -15,11 +15,11 @@ openapi-workbench/
     └── typescript/            # TypeScript Provider
 ```
 
-通用层只依赖标准库及本目录内代码，不导入业务 Handler、Service、数据库或项目运行配置。它不识别 业务路由，也不内置业务包名、客户端名和输出位置。
+通用层只依赖标准库及本目录内代码，不导入业务 Handler、Service、数据库或项目运行配置。它不识别业务路由，也不内置业务包名、客户端名和输出位置。
 
 消费项目的命令入口负责 Provider 注册、输出配置和公开分组/方法命名。业务命名规则通过 `Generator.NameMethod` 提供；通用层先归一化 Action 文档路径，再调用命名规则并校验方法重名。
 
-消费项目的 Go / TypeScript SDK 是独立客户端工程，保留各自的传输运行时、依赖与使用说明。Provider 生成操作与模型，再把该语言的工程源码打包；不会生成或初始化业务服务，也不会将依赖安装目录和构建缓存装入归档。
+消费项目的 Go / TypeScript SDK 是独立客户端工程，保留各自的传输运行时、依赖与使用说明。Provider 生成操作与模型；只有同时配置 `ArchivePath` 和 `ArchiveRoot` 时才归档，Git 安装的消费方仅配置 `Directory`；不会生成或初始化业务服务，也不会将依赖安装目录和构建缓存装入归档。
 
 ## Provider 协议
 

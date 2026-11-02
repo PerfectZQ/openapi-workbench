@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-// Target describes the source directory and downloadable archive chosen by the caller.
+// Target describes the source directory and optional archive chosen by the caller.
 type Target struct {
 	Directory   string
 	ArchivePath string
@@ -18,6 +18,12 @@ type Target struct {
 // Archive writes deterministic SDK sources; include controls each provider's package layout.
 // Directory predicates may return filepath.SkipDir to exclude dependencies and build output.
 func (target Target) Archive(include func(string, os.DirEntry) (bool, error)) error {
+	if target.ArchivePath == "" && target.ArchiveRoot == "" {
+		return nil
+	}
+	if target.ArchivePath == "" || target.ArchiveRoot == "" {
+		return fmt.Errorf("SDK archive requires both path and root")
+	}
 	var data bytes.Buffer
 	writer := zip.NewWriter(&data)
 	err := filepath.WalkDir(target.Directory, func(name string, entry os.DirEntry, err error) error {

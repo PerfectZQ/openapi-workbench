@@ -5,9 +5,9 @@
 Go module 与两个前端包使用同一 `vX.Y.Z` tag。固定版本并提交 `go.sum`、`package-lock.json`，构建不得依赖开发机目录或隐式跟随 latest。
 
 ```bash
-go get github.com/PerfectZQ/openapi-workbench@v0.1.0
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.0/api-explorer-react.tgz
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.0/workbench-ui.tgz
+go get github.com/PerfectZQ/openapi-workbench@v0.1.1
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/api-explorer-react.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/workbench-ui.tgz
 ```
 
 工作台消费方需要 React / React DOM 19；单独使用通用 UI 时安装其声明的 peer dependencies，并在 Vite 中去重 React、react-i18next、Monaco 和 Motion。前端仅暴露构建后的公开入口，不引用仓库源码。 单独使用 `@workbench/ui` 编辑器时，Vite 需配置 `optimizeDeps: { exclude: ['@workbench/ui'] }`，由 Vite 处理包内 `?worker&inline` 导入，避免依赖预打包直接读取 Worker 查询路径。
@@ -70,3 +70,5 @@ err := generator.Generate("openapi.json", []string{"go", "typescript"})
 Provider 生成操作和类型，依赖消费项目已有的客户端运行时协议（Go 的 clientState/request/businessRequest，TypeScript 的 ClientRuntime），不自行生成认证客户端或业务服务。应把对应运行时、依赖声明和使用说明放在目标工程目录，归档会一并收录；接口投影与运行时必须一起编译、测试。
 
 新增语言遵循 [Provider 规范](../development/sdk-generation.md)，在同一模块注册，不复制另一套命令和契约解析。
+
+SDK 通过 Git 仓库交付时，仅设置 `artifact.Target.Directory`；省略 `ArchivePath` 和 `ArchiveRoot` 即只生成源码，不创建 ZIP。

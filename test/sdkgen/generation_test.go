@@ -35,6 +35,15 @@ func TestProvidersGenerateIndependentAPI(t *testing.T) {
 	if err := generator.Generate(specPath, generator.Languages()); err != nil {
 		t.Fatal(err)
 	}
+	// Git consumers generate the same sources without creating a download archive.
+	generator.Providers = []sdkgen.Provider{
+		golang.Provider{Target: artifact.Target{Directory: goTarget.Directory}, Package: "catalog"},
+		typescript.Provider{Target: artifact.Target{Directory: tsTarget.Directory}, ClientName: "CatalogClient"},
+	}
+	if err := generator.Generate(specPath, generator.Languages()); err != nil {
+		t.Fatal(err)
+	}
+
 	for file, fragments := range map[string][]string{
 		filepath.Join(goTarget.Directory, "api_catalog.gen.go"):  {"package catalog", "func (s *CatalogService) List", `"/catalog/items"`},
 		filepath.Join(goTarget.Directory, "models.gen.go"):       {"type Item struct", "type CatalogListOutput struct"},
