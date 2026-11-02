@@ -1,5 +1,9 @@
 # 接入指南
 
+本项目有三项可独立使用的能力：`@api-explorer/react` 提供整页接口文档与 HTTP 调试界面；`@workbench/ui` 提供下拉选择、复制按钮和 JSON 编辑器等单个控件；Go 库 `sdkgen` 根据接口描述生成 Go / TypeScript 客户端源码。只需要接口文档页面时，只装 `@api-explorer/react`，它已包含所需控件。文中的“宿主”指你的接入项目，“契约”指 Swagger 2.0 接口描述 JSON。
+
+第一次接入从[前端资源指南](frontend-resources.md)开始；已有 Swagger UI 时先看[差异与迁移](swagger-ui-migration.md)。
+
 ## 配套版本
 
 Go module 与两个前端包使用同一 `vX.Y.Z` tag。固定版本并提交 `go.sum`、`package-lock.json`，构建不得依赖开发机目录或隐式跟随 latest。
@@ -13,6 +17,8 @@ npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.
 工作台消费方需要 React / React DOM 19；单独使用通用 UI 时安装其声明的 peer dependencies，并在 Vite 中去重 React、react-i18next、Monaco 和 Motion。前端仅暴露构建后的公开入口，不引用仓库源码。 单独使用 `@workbench/ui` 编辑器时，Vite 需配置 `optimizeDeps: { exclude: ['@workbench/ui'] }`，由 Vite 处理包内 `?worker&inline` 导入，避免依赖预打包直接读取 Worker 查询路径。
 
 ## React 工作台
+
+下面展示已有 React 项目的组件入口。全新项目需要 HTML 入口、Vite 配置、契约加载和部署路由，完整可运行步骤见[前端资源：构建、接入与部署](frontend-resources.md)。组件安装包供宿主构建使用，最终静态页面由宿主生成。
 
 ```tsx
 import { APIWorkbench, type APIWorkbenchHost } from '@api-explorer/react'

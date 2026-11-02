@@ -1,6 +1,12 @@
 # API Explorer
 
-API Explorer 是独立的 React 全页接口工作台，接收 Swagger 2.0 契约，提供接口目录、字段说明、请求调试和导出。服务内容来自契约，认证和部署配置来自宿主。
+API Explorer 是供用户查看接口文档、填写参数并发送 HTTP 请求的完整网页界面。它读取 Swagger 2.0 JSON 文件中的接口描述，自动展示接口列表、参数与返回字段。接入网站负责提供 JSON 地址和登录认证。
+
+`@api-explorer/react` 是这个界面的安装包，`APIWorkbench` 是代码中渲染它的 React 组件名；这里的“组件”是整页界面，不是一个按钮。`@workbench/ui` 则是下拉选择、复制按钮、JSON 展示与编辑器等基础控件的集合，不读取 Swagger，不负责接口文档。普通接入只装前一个包，它已包含所需控件。
+
+文中的“宿主”就是接入这个页面的你自己的项目；“契约”就是描述接口地址、参数、返回值与认证方式的 JSON 文件。与标准 Swagger UI 的兼容范围和替换步骤见[迁移说明](../doc/guide/swagger-ui-migration.md)。
+
+从零创建接入项目、构建静态页面、用 Go 托管及其运行原理，见[前端资源：构建、接入与部署](../doc/guide/frontend-resources.md)。`npm run build` 输出可安装的组件库；`npm run build:demo` 输出示例 HTML；业务页面由消费项目自己的构建命令生成。
 
 ## 项目结构
 
@@ -11,20 +17,17 @@ API Explorer 是独立的 React 全页接口工作台，接收 Swagger 2.0 契�
 | `demo/` | 通过公开包入口接入的 Inventory 示例 |
 | `test/` | 通用认证、路径映射、导出及实际构建依赖边界测试 |
 
-整个目录拥有独立的 `package.json`、`package-lock.json`、TypeScript 与 Vite 配置，可单独复制或迁入其他仓库。Node.js 要求 24，不需要 Go、外层前端的依赖或业务服务。
+整个目录拥有独立的 `package.json`、`package-lock.json`、TypeScript 与 Vite 配置。Node.js 要求 24，不需要 Go 或业务服务即可构建库和查看示例；接入项目直接安装发布包。
 
 ## 接入
 
-在本项目目录安装依赖、构建、测试和打包：
+在你自己的 React 项目中安装（需要 React / React DOM 19）：
 
 ```bash
-npm ci
-npm run build
-npm test
-npm pack --pack-destination /tmp
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.1.1/api-explorer-react.tgz
 ```
 
-打包产物只包含分发文件与声明，通用 UI、语言资源、Monaco 和字体已包含其中。消费端需要 React 19 与 React DOM 19，安装本地产物后使用公开入口：
+安装包包含编译后的代码与类型声明，所需基础控件、中英文文案、JSON 编辑器和字体已包含其中。导入页面组件及其样式：
 
 ```tsx
 import { APIWorkbench, type APIWorkbenchHost } from '@api-explorer/react'
