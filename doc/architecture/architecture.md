@@ -20,7 +20,7 @@ flowchart LR
 | --- | --- |
 | `contract/` | Go 契约结构、公共名称和方法目录；不识别业务路径 |
 | `sdkgen/` | Provider 协议、语言选择、统一读取与执行 |
-| `sdkgen/{golang,typescript}/` | 语言类型映射、注释、服务和方法输出、归档规则 |
+| `sdkgen/{golang,typescript}/` | 语言类型映射、注释、客户端配置与 URL、服务和方法输出、归档规则 |
 | `sdkgen/artifact/` | ZIP 遍历、确定性输出与归档目标 |
 | `frontend/src/` | React 工作台、无 UI 的 core、契约及请求/导出处理 |
 | `frontend/packages/ui/` | 通用控件、编辑器、主题和语言资源 |

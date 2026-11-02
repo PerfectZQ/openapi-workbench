@@ -32,6 +32,9 @@ func (p Provider) Generate(spec contract.Specification, groups map[string][]cont
 		return err
 	}
 	g := generator{spec: spec, names: names, models: models, output: p.Target.Directory, clientName: p.ClientName}
+	if err := g.writeConfig(); err != nil {
+		return err
+	}
 	if err := g.writeServices(groups); err != nil {
 		return err
 	}

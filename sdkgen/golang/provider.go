@@ -33,6 +33,9 @@ func (p Provider) Generate(spec contract.Specification, groups map[string][]cont
 	if err := os.MkdirAll(g.output, 0755); err != nil {
 		return err
 	}
+	if err := g.writeConfig(); err != nil {
+		return err
+	}
 	if err := g.writeServices(groups); err != nil {
 		return err
 	}
