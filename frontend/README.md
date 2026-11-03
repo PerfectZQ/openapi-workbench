@@ -21,22 +21,20 @@ API Explorer 是基于 Swagger 的完整产品。普通接入直接挂载随产�
 在你自己的 React 项目中安装（需要 React / React DOM 19）：
 
 ```bash
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.3.0/api-explorer-react.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.4.0/api-explorer-react.tgz
 ```
 
 安装包包含编译后的代码与类型声明，所需基础控件、中英文文案、JSON 编辑器和字体已包含其中。导入页面组件及其样式：
 
 ```tsx
-import { APIWorkbench, type APIWorkbenchHost } from '@api-explorer/react'
+import { APIWorkbench } from '@api-explorer/react'
+import { createWorkbenchHost } from '@api-explorer/react/core'
 import '@api-explorer/react/style.css'
 
-const host: APIWorkbenchHost = {
-  async loadSpecification() {
-    const response = await fetch('/openapi.json')
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    return response.json()
-  },
-}
+const host = createWorkbenchHost({
+  specificationURL: '/openapi.json',
+  origin: window.location.origin,
+})
 
 export function APIPage() {
   return <APIWorkbench host={host} locale="zh-CN" />
@@ -50,6 +48,8 @@ export function APIPage() {
 这是全页组件：使用视口高度、页面 Hash 直达接口，并更新页面标题。样式入口包含基础字体、控件 token 和页面重置。调试请求限制同源、拒绝重定向；跨域服务应由宿主网关代理并映射契约地址。当前契约模型为 Swagger 2.0，`x-api-*` 是可选扩展，不表示支持任意 OpenAPI 3.x 文档。
 
 ## 宿主能力
+
+`createWorkbenchHost` 统一处理契约同源校验、凭据获取、401 通知和路径投影。接入现有 IdP 或服务端权限系统时，按[标准认证与鉴权](../doc/guide/authentication.md)配置同一个提供方。
 
 | 注入项 | 行为 |
 | --- | --- |
