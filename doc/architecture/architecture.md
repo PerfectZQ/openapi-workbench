@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-API Explorer 是一个完整产品，内置可挂载前端与 SDK 生成命令。同一 Swagger 2.0 契约供前端阅读、调试和导出，也供语言 Provider 生成客户端操作与类型。Go 生成器与 React 工作台分属编译期和浏览器运行期，通过契约约定协同，版本一起发布。
+API Explorer 是一个完整产品，内置可挂载前端、契约 CLI、Skill 与 SDK 生成命令。同一 Swagger 2.0 契约供前端阅读、调试和导出，也供语言 Provider 生成客户端操作与类型。Go 生成器与 React 工作台分属编译期和浏览器运行期，通过契约约定协同，版本一起发布。
 
 ```mermaid
 flowchart LR
@@ -9,6 +9,11 @@ flowchart LR
   Contract --> Generator[sdkgen 语言选择]
   Generator --> Go[Go Provider]
   Generator --> TS[TypeScript Provider]
+  Spec --> CLI[cli 契约命令]
+  CLI --> Skills[skillgen Agent Skill]
+  CLI --> Security[security 标准认证传输]
+  Host --> Security
+  Security --> API[服务端身份校验与权限策略]
   Spec --> Frontend[API Explorer]
   Host[宿主认证与部署配置] --> Frontend
   Frontend --> UI[产品内部全局 UI]
@@ -19,6 +24,10 @@ flowchart LR
 | 目录 | 所有权 |
 | --- | --- |
 | `explorer.go`、`cmd/api-explorer/` | 完整前端的挂载、导出与 SDK 命令 |
+| `product/` | 完整项目生成与统一产品版本；暂存成功后一次发布输出目录 |
+| `cli/` | 原子命令、参数、请求、错误与文件传输；业务信封和复合命令归宿主 |
+| `skillgen/` | 从同一命令目录生成 Skill，拼接宿主业务说明；不维护第二份 API 清单 |
+| `security/` | Swagger 安全方案、凭据传输、AND/OR、scope 与服务端保护入口；不代替 IdP |
 | `sdkgen/project/` | 一次生成完整 SDK 工程及通用客户端运行时 |
 | `contract/` | Go 契约结构、公共名称和方法目录；不识别业务路径 |
 | `sdkgen/` | Provider 协议、语言选择、统一读取与执行 |
@@ -41,3 +50,9 @@ Go 库只依赖标准库。前端公开包只导出 `dist` 与完整页面 `asse
 浏览器加载页面后才调用 `host.loadSpecification()`，根据契约生成接口目录、Schema 展示和请求表单；Swagger 不参与生成 React 源文件。后端契约更新与前端组件升级因此分别交付。SDK Provider 在 Go 进程中生成客户端源码，既不编译 React，也不注册静态资源路由。
 
 构建命令、产物目录、全新宿主示例、Go 嵌入及运行流程图见[前端资源指南](../guide/frontend-resources.md)。
+
+## 业务接入边界
+
+`cli.App` 由宿主提供契约与环境变量前缀。普通 REST 使用内置认证及标准响应；已有系统通过 `MapPath`、`PrepareRequest`、`Authenticate` 和 `DecodeResponse` 接入网关、时间头、身份提供方与业务信封。多接口流程调用同一个 `App.Call`，不复制命令解析和 HTTP 实现。客户端不发自动重试，不将接口成功当成工作流通过。
+
+`security.Apply` 按 Swagger 声明只发送一个完整认证组合；`security.Gate` 在服务端执行身份校验、scope 和额外权限策略。前端 `createWorkbenchHost` 统一保护契约加载和调试所需的身份提供方，原有 Session Cookie 可直接沿用。详见[标准认证鉴权](../guide/authentication.md)。

@@ -4,9 +4,9 @@
 
 ## 项目定位与边界
 
-API Explorer 是基于 Swagger 的完整扩展产品：安装即携带可挂载前端，同一产品命令生成 Go / TypeScript SDK；仓库与 Go module 地址保留 openapi-workbench。
+API Explorer 是基于 Swagger 的完整扩展产品：安装即携带可挂载前端，同一产品命令生成 CLI、Agent Skill 和 Go / TypeScript SDK；仓库与 Go module 地址保留 openapi-workbench。
 
-- `contract/` 拥有 Go 契约模型和归一化；`sdkgen/` 拥有生成调度与语言 Provider；`frontend/` 拥有 React 工作台和 `src/ui/` 产品全局控件。
+- `contract/` 拥有 Go 契约模型和归一化；`sdkgen/` 拥有生成调度与语言 Provider；`frontend/` 拥有 React 工作台和 `src/ui/` 产品全局控件；`cli/` 拥有契约命令运行时，`skillgen/` 生成技能，`security/` 拥有标准认证传输与鉴权边界，`product/` 组合完整交付。
 - 独立 Go module 对外导出 `contract`、`sdkgen`；不要套入 `internal/` 导致消费项目无法导入。
 - 项目专属路由、身份获取、业务名称与 SDK 输出位置由调用方配置，不在本项目识别业务系统。
 - 只实现已存在的能力，禁止为未来语言添加空 Provider、无调用接口或冗余配置。语言共性维护一份，类型映射和输出语法归对应 Provider。
@@ -31,7 +31,7 @@ Go 1.26.4、Node.js 24、npm。通过 `GO_BIN=/path/to/go` 指定版本匹配的
 
 - `./script/bootstrap.sh`：只配置当前仓库 Git hooks/线性历史并安装前端依赖，不改变全局配置。
 - `GO_BIN=/path/to/go ./script/check.sh`：Go 格式/测试、前端构建/测试及补丁检查。
-- `./script/package.sh v0.3.0`：按前端版本生成同一 Release 的一个完整 npm 包和校验文件。
+- `./script/package.sh v0.4.0`：按前端版本生成同一 Release 的一个完整 npm 包和校验文件。
 - 测试集中在 `test/` 和 `frontend/test/`，从公开入口验证行为；不为测试导出私有 helper，不使用业务 Fake/Mock。
 - `.artifacts/`、依赖、缓存不提交。文档链接必须真实存在；临时诊断和测试脚本即用即删。
 

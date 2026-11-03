@@ -9,6 +9,8 @@ const tag = process.argv[2]
 assert.match(tag, /^v\d+\.\d+\.\d+$/)
 const manifest = JSON.parse(readFileSync('frontend/package.json', 'utf8'))
 assert.equal(`v${manifest.version}`, tag, '前端产品版本与 tag 不一致')
+const productVersion = readFileSync('product/version.go', 'utf8').match(/const Version = "([^"]+)"/)?.[1]
+assert.equal(productVersion, tag, '生成 CLI 的依赖版本与产品 tag 不一致')
 const lock = JSON.parse(readFileSync('frontend/package-lock.json', 'utf8'))
 assert.equal(`v${lock.version}`, tag)
 assert.equal(`v${lock.packages[''].version}`, tag)

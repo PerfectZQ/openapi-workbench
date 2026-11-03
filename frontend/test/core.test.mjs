@@ -73,3 +73,57 @@ test('公共路径同时映射 REST 与 Action，InnerTOP 完全使用传入服�
   assert.equal(innerTOPExportIssue(spec, action.key, config), undefined)
   assert.equal(innerTOPExportIssue(spec, action.key, { ...config, transportHeaders: [] }).code, 'location')
 })
+
+test('标准认证宿主共用一个提供方，保护契约同源并区分 401/403', async t => {
+  const { createWorkbenchHost, authorizationTypes } = await import('@api-explorer/react/core')
+  const calls = []
+  let status = 200, logins = 0, unauthorized = 0
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    calls.push({ url, options })
+    return new Response(JSON.stringify(inventory), { status })
+  })
+  const authentication = {
+    scheme: 'SessionKey', header: 'X-Session-Key', label: () => 'Session',
+    getHeaders: async () => { logins++; return { 'X-Session-Key': 'session-token' } },
+    onUnauthorized: () => { unauthorized++ },
+  }
+  const host = createWorkbenchHost({ specificationURL: '/swagger.json', origin: 'https://inventory.test', request: { authentication } })
+  const spec = await host.loadSpecification()
+  assert.ok(spec.paths['/inventory/items'])
+  assert.deepEqual(calls[0], { url: 'https://inventory.test/swagger.json', options: {
+    headers: { 'X-Session-Key': 'session-token' }, credentials: 'same-origin', cache: 'no-store', redirect: 'error',
+  } })
+  assert.equal(host.request.authentication, authentication)
+  status = 401
+  await assert.rejects(host.loadSpecification(), /401/)
+  assert.equal(unauthorized, 1)
+  status = 403
+  await assert.rejects(host.loadSpecification(), /403/)
+  assert.equal(unauthorized, 1)
+  await assert.rejects(createWorkbenchHost({ specificationURL: 'https://foreign.test/swagger.json', origin: 'https://inventory.test', request: { authentication } }).loadSpecification(), /origin/)
+  assert.equal(logins, 3, '跨域契约不能触发取票，401/403 不能重试')
+  const oauth = { ...inventory, securityDefinitions: { OAuth: { type: 'oauth2', flow: 'accessCode', scopes: { read: 'Read' } } }, paths: { '/items': { get: { ...operation, parameters: [], security: [{ OAuth: ['read'] }] } } } }
+  const api = operations(oauth)[0]
+  const settings = { ...emptySettings, credentials: { OAuth: { value: 'oauth-secret' } } }
+  assert.equal(authorizationTypes(oauth).find(type => type.id === 'OAuth').kind, 'bearer')
+  const request = prepareRequest(oauth, api, initialDraft(oauth, api), 'https://inventory.test', settings)
+  assert.equal(request.headers.authorization, 'Bearer oauth-secret')
+  assert.ok(!requestCurl(request).includes('oauth-secret'))
+  const alternatives = { ...oauth, securityDefinitions: { ...oauth.securityDefinitions, Key: { type: 'apiKey', in: 'header', name: 'X-Key' } } }
+  const orAPI = { ...api, operation: { ...api.operation, security: [{ OAuth: ['read'] }, { Key: [] }] } }
+  const both = { ...settings, credentials: { ...settings.credentials, Key: { value: 'extra-key' } } }
+  const one = prepareRequest(alternatives, orAPI, initialDraft(alternatives, orAPI), 'https://inventory.test', both)
+  assert.equal(one.headers.authorization, 'Bearer oauth-secret')
+  assert.equal(one.headers['x-key'], undefined, 'OR 不得同时发送不相关的凭据')
+  const automaticOAuth = { authentication: { ...authentication, scheme: 'OAuth', header: 'Authorization' } }
+  const manualKey = { ...emptySettings, credentials: { Key: { value: 'manual-key' } } }
+  const manual = prepareRequest(alternatives, orAPI, initialDraft(alternatives, orAPI, automaticOAuth), 'https://inventory.test', manualKey, automaticOAuth)
+  assert.equal(manual.automaticAuth, false, '完整手填组合优先于自动身份')
+  assert.equal(manual.headers.authorization, undefined)
+  assert.equal(manual.headers['x-key'], 'manual-key')
+  const optional = { ...orAPI, operation: { ...orAPI.operation, security: [{}, { OAuth: ['read'] }] } }
+  assert.equal(prepareRequest(alternatives, optional, initialDraft(alternatives, optional), 'https://inventory.test', both).headers.authorization, undefined)
+  const andAPI = { ...orAPI, operation: { ...orAPI.operation, security: [{ OAuth: ['read'], Key: [] }] } }
+  const incomplete = prepareRequest(alternatives, andAPI, initialDraft(alternatives, andAPI), 'https://inventory.test', settings)
+  assert.equal(incomplete.headers.authorization, undefined, '不应用不完整的 AND 凭据组合')
+})

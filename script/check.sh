@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 go_bin="${GO_BIN:-go}"
 go_format="$(dirname "$(command -v "$go_bin")")/gofmt"
-unformatted="$("$go_format" -l explorer.go cmd contract sdkgen test)"
+unformatted="$("$go_format" -l explorer.go cmd contract sdkgen cli security skillgen product test)"
 if [[ -n "$unformatted" ]]; then
   echo "Go 文件需要格式化：$unformatted" >&2
   exit 1

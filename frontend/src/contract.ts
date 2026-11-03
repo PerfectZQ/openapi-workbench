@@ -52,6 +52,10 @@ export interface SecurityScheme {
   name?: string
   in?: string
   description?: string
+  flow?: string
+  authorizationUrl?: string
+  tokenUrl?: string
+  scopes?: Record<string, string>
 }
 
 export interface Specification {

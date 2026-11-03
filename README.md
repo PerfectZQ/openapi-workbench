@@ -1,15 +1,18 @@
 # API Explorer
 
-基于 Swagger 的一站式扩展产品：接口文档、在线调试与 Go / TypeScript SDK 生成。安装包自带完整前端页面、全局 UI、编辑器、语言资源和字体，接入方提供 Swagger JSON 即可使用。
+基于 Swagger 的一站式扩展产品：接口文档、在线调试、CLI、Agent Skill 和 Go / TypeScript SDK 生成。安装包自带完整前端页面、全局 UI、编辑器、语言资源和字体，接入方提供 Swagger JSON 即可使用。
 
-v0.3.0 起统一交付内置前端与 SDK 命令，旧版 v0.2.x 不包含这些入口。仓库与 Go module 地址仍为 `github.com/PerfectZQ/openapi-workbench`。
+v0.4.0 将 CLI、Skill 生成与标准认证鉴权合入同一产品；业务认证、权限策略和复合操作通过宿主适配接入。仓库与 Go module 地址仍为 `github.com/PerfectZQ/openapi-workbench`。
 
 ## 安装与使用
 
 ```bash
-go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.3.0
+go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.4.0
 
-# 导出随产品内置的完整前端，挂载此目录即可使用
+# 一次生成页面、CLI、Agent Skill 和 Go / TypeScript SDK
+api-explorer generate --spec ./swagger.json --out ./api-tools --name inventory
+
+# 也可只导出完整前端
 api-explorer assets --spec /swagger/doc.json --out ./public/api-explorer
 
 # 一条命令生成可编译的 Go 和 TypeScript SDK 工程
@@ -40,13 +43,14 @@ mux.Handle("/api-explorer/", http.StripPrefix("/api-explorer",
 ```bash
 ./script/bootstrap.sh
 GO_BIN=/path/to/go1.26.4/bin/go ./script/check.sh
-./script/package.sh v0.3.0
+./script/package.sh v0.4.0
 ```
 
 开发环境为 Go 1.26.4、Node.js 24、npm。前端源码统一位于 `frontend/src/`，全局 UI 是其内部 `ui/` 目录，所有能力共用产品版本和安装包。`@api-explorer/react` 提供需要深度定制时的 React 入口，内部控件不再独立发布。
 
 ## 文档导航
 
+- [标准认证与鉴权](doc/guide/authentication.md) · [CLI 与 Agent Skill](doc/guide/cli-and-skills.md)
 - [架构与模块边界](doc/architecture/architecture.md)
 - [接入指南](doc/guide/quick-start.md) · [前端挂载与部署](doc/guide/frontend-resources.md)
 - [React 定制与前端开发](frontend/README.md)

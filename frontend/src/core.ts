@@ -1,6 +1,8 @@
 export { operations, actionIdentity, publicSpecification, replacePathPrefix, catalogGroups, enumValues, operationGroup, operationLifecycle, resolveSchema } from './contract.ts'
 export type { Specification, APIOperation, Operation, Schema } from './contract.ts'
 export type { APIWorkbenchHost, RequestAdapter, AutomaticAuthentication } from './host.ts'
+export { createWorkbenchHost } from './host.ts'
+export type { WorkbenchHostOptions } from './host.ts'
 export { generateInnerTOP, innerTOPExportIssue, ExportError } from './innertop.ts'
 export type { ExportOptions } from './innertop.ts'
 export { initialDraft, prepareRequest, requestCurl, requestURL, requestParameters, schemaExample } from './request.ts'

@@ -15,9 +15,9 @@ export function authorizationTypes(spec: Specification, custom: CustomAuthorizat
   const declared = Object.entries(spec.securityDefinitions ?? {}).map(([id, scheme]): AuthorizationType => ({
     id,
     name: scheme.type === 'basic' ? 'Basic Auth' : id,
-    kind: scheme.type === 'basic' ? 'basic' : 'custom',
+    kind: scheme.type === 'basic' ? 'basic' : scheme.type === 'oauth2' ? 'bearer' : 'custom',
     fields:
-      scheme.type === 'basic'
+      scheme.type === 'basic' || scheme.type === 'oauth2'
         ? [{ in: 'header', name: 'Authorization' }]
         : scheme.name
           ? [{ in: scheme.in ?? 'header', name: scheme.name }]

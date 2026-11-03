@@ -2,7 +2,7 @@
 
 Go 测试位于 `test/<module>/`，前端测试位于 `frontend/test/`。通过正式公开入口验证完整行为，不为测试导出私有方法或引入 Fake/Mock 业务层。
 
-核心回归包括：独立 API 契约到 Go/TypeScript 源码和 ZIP，模型引用/组合/说明，单语言和多语言选择，稳定输出与冲突；前端认证注入、路径映射、InnerTOP 导出、真实构建依赖闭包和编辑器 Worker。
+核心回归包括：Swagger 到完整项目的生成、生成 CLI 的真实构建/HTTP 请求、标准认证 AND/OR、scope 与权限拒绝、认证失败不重放、独立 API 契约到 Go/TypeScript 源码和 ZIP，模型引用/组合/说明，单语言和多语言选择，稳定输出与冲突；前端认证注入、路径映射、InnerTOP 导出、真实构建依赖闭包和编辑器 Worker。
 
 执行 `./script/check.sh` 完成格式、Go 测试、前端构建/测试和补丁检查。`./script/package.sh <tag>` 验证前端包与产品版本一致，并产出分发包和 SHA256 清单。界面交互变化另做浏览器检查；发布后从 GitHub 下载真实版本验证，不能以本地产物替代远端可用性。
 

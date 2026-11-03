@@ -1,14 +1,36 @@
 # 安装与使用
 
-API Explorer 是一个完整的 Swagger 扩展产品，安装后即可取得前端页面，也可以用同一个命令生成 SDK。下面的一体化入口从 v0.3.0 开始提供；旧版不包含这些命令。
+API Explorer 是一个完整的 Swagger 扩展产品，从 goswag 生成的同一份 Swagger，一次交付页面、CLI、Agent Skill 和 Go / TypeScript SDK。完整生成入口从 v0.4.0 开始提供。
 
 ## 安装
 
 ```bash
-go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.3.0
+go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.4.0
 ```
 
 需要 Go 1.26.4。命令安装到 `go env GOBIN` 指定的位置，未设置时为 `$(go env GOPATH)/bin`；确保该目录在 PATH 中。产品已内置构建好的页面，不要求安装前端工具链。
+
+## 一站式生成
+
+```bash
+# 沿用服务已有的 goswag 生成命令
+swag init --output ./swagger --outputTypes json
+api-explorer generate --spec ./swagger/swagger.json --out ./api-tools --name inventory
+
+cd api-tools/cli
+go mod tidy
+go build -o ../bin/inventory .
+```
+
+输出 `explorer/`、`cli/`、`skills/inventory-api/` 和 `sdk/{go,typescript}/`。把 `explorer/` 挂到服务同源静态路径，`bin/` 加入 PATH，Skill 目录放入 Agent 的技能目录，即可使用同一契约。输出目录必须不存在，任何生成失败都不会留下半成品目录。产物中的 CLI 固定当前产品版本，重新生成无需复制通用运行时。
+
+```bash
+export INVENTORY_BASE_URL=https://inventory.example.com
+inventory api list
+inventory inventory list-items --help
+```
+
+命令来自 `operationId` 或 Tags，以上分组仅是示例。凭据不写入产物；安装与更新见 [CLI 与 Skill](cli-and-skills.md)，身份提供方、Scope 和业务权限接入见 [标准认证鉴权](authentication.md)。
 
 ## 挂载前端
 
@@ -21,7 +43,7 @@ api-explorer assets --spec /swagger/doc.json --out ./public/api-explorer
 如果使用 Go 服务，可直接依赖同一产品并挂载，无需导出：
 
 ```bash
-go get github.com/PerfectZQ/openapi-workbench@v0.3.0
+go get github.com/PerfectZQ/openapi-workbench@v0.4.0
 ```
 
 ```go

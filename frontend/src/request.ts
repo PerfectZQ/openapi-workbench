@@ -33,6 +33,7 @@ export function supportsAutomaticAuth(
   spec: Specification, api: APIOperation, authentication?: AutomaticAuthentication,
 ) {
   if (!authentication) return false
+  if (api.operation.security?.length === 0) return false
   return (
     authorizationRequirements(spec, api).some((schemes) => schemes.includes(authentication.scheme)) ||
     !!api.operation.parameters?.some((parameter) =>
@@ -188,9 +189,28 @@ export function effectiveDraft(
     }
   }
   let basic = draft.customAuth ? draft.basic : undefined
+  let inheritedAutomaticAuth = false
   if (!draft.customAuth) {
-    const required = new Set(authorizationRequirements(spec, api).flat())
-    for (const type of authorizationTypes(spec).filter((type) => required.has(type.id))) {
+    const types = authorizationTypes(spec)
+    const alternatives = authorizationRequirements(spec, api)
+    const available = (id: string, allowAutomatic: boolean) => {
+      const type = types.find(type => type.id === id)
+      if (!type) return false
+      if (allowAutomatic && settings.automaticAuth && id === adapter?.authentication?.scheme) return true
+      const credential = settings.credentials[id]
+      if (type.kind === 'basic' ? !!credential?.username : !!credential?.value) return true
+      return type.fields.length > 0 && type.fields.every(field => Object.entries(values).some(([key, value]) =>
+        key.toLowerCase() === `${field.in}:${field.name}`.toLowerCase() && !!value,
+      ))
+    }
+    const chosen = alternatives.some(group => group.length === 0)
+      ? []
+      : alternatives.find(group => group.every(id => available(id, false)))
+        ?? alternatives.find(group => group.every(id => available(id, true)))
+        ?? []
+    inheritedAutomaticAuth = !!adapter?.authentication && settings.automaticAuth && chosen.includes(adapter.authentication.scheme)
+    const required = new Set(chosen)
+    for (const type of types.filter(type => required.has(type.id))) {
       const credential = settings.credentials[type.id]
       if (!credential) continue
       if (type.kind === 'basic') basic = { username: credential.username ?? '', password: credential.password ?? '' }
@@ -221,7 +241,7 @@ export function effectiveDraft(
       ? selected.id === adapter?.authentication?.scheme && draft.automaticAuth
       : draft.customAuth
         ? draft.automaticAuth
-        : settings.automaticAuth,
+        : inheritedAutomaticAuth,
   }
 }
 
