@@ -62,6 +62,7 @@ type Operation struct {
 	ResultField string `json:"x-api-result-field"`
 	BusinessID  string `json:"x-api-operation"`
 	Action      struct {
+		Path    string `json:"path"`
 		Version string `json:"version"`
 		Name    string `json:"name"`
 	} `json:"x-api-action"`

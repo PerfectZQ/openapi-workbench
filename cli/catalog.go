@@ -53,7 +53,9 @@ type Operation struct {
 	BusinessID          string                `json:"x-api-operation"`
 	BusinessFile        bool                  `json:"x-api-file"`
 	BusinessAction      struct {
-		Name string `json:"name"`
+		Name    string `json:"name"`
+		Path    string `json:"path"`
+		Version string `json:"version"`
 	} `json:"x-api-action"`
 	InputJSON       []string `json:"x-api-input-json"`
 	actionOperation *Operation
@@ -132,20 +134,32 @@ func (s specification) lookup(method, path string) (Command, Operation, error) {
 	name := op.OperationID
 	if op.BusinessID != "" {
 		name = op.BusinessAction.Name
+		sameName := 0
 		for _, action := range s.Actions {
-			if action.Action == op.BusinessAction.Name {
-				var projected Operation
-				if err := json.Unmarshal(action.Operation, &projected); err != nil {
-					return v, op, err
-				}
-				projected.securityDefinitions = s.SecurityDefinitions
-				if projected.Security == nil {
-					projected.Security = s.Security
-				}
-				op.actionOperation, op.actionVersion = &projected, action.Version
-				op.actionPath, op.actionMethod = strings.TrimSuffix(s.BasePath, "/")+action.Path, strings.ToUpper(action.Method)
-				break
+			if action.Action != op.BusinessAction.Name {
+				continue
 			}
+			sameName++
+			if op.BusinessAction.Path != "" && action.Path != op.BusinessAction.Path ||
+				op.BusinessAction.Version != "" && action.Version != op.BusinessAction.Version {
+				continue
+			}
+			if op.actionOperation != nil {
+				return v, op, fmt.Errorf("业务操作 %s 的 Action 投影不唯一", op.BusinessID)
+			}
+			var projected Operation
+			if err := json.Unmarshal(action.Operation, &projected); err != nil {
+				return v, op, err
+			}
+			projected.securityDefinitions = s.SecurityDefinitions
+			if projected.Security == nil {
+				projected.Security = s.Security
+			}
+			op.actionOperation, op.actionVersion = &projected, action.Version
+			op.actionPath, op.actionMethod = strings.TrimSuffix(s.BasePath, "/")+action.Path, strings.ToUpper(action.Method)
+		}
+		if sameName > 1 {
+			name = kebab(op.BusinessID)
 		}
 		if op.actionOperation == nil {
 			return v, op, fmt.Errorf("业务操作 %s 缺少 Action 投影", op.BusinessID)

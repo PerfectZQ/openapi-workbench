@@ -38,7 +38,7 @@ export interface Operation {
   parameters?: Parameter[]
   responses: Record<string, { description?: string; schema?: Schema }>
   'x-api-operation'?: string
-  'x-api-action'?: { name: string }
+  'x-api-action'?: { name: string; path?: string; version?: string }
   'x-api-lifecycle'?: { stage: 'sunset'; description?: string }
 }
 
@@ -214,14 +214,20 @@ export function publicSpecification(
 ): Specification {
   const url = new URL(origin)
   const runtimePath = (path: string) => mapPath((spec.basePath ?? '').replace(/\/$/, '') + path)
+  const publicOperation = (operation: Operation): Operation => {
+    const action = operation['x-api-action']
+    return action?.path ? { ...operation, 'x-api-action': { ...action, path: runtimePath(action.path) } } : operation
+  }
   return {
     ...spec,
     host: url.host,
     schemes: [url.protocol.slice(0, -1)],
     basePath: '/',
-    paths: Object.fromEntries(Object.entries(spec.paths).map(([path, value]) => [runtimePath(path), value])),
+    paths: Object.fromEntries(Object.entries(spec.paths).map(([path, methods]) => [
+      runtimePath(path), Object.fromEntries(Object.entries(methods).map(([method, op]) => [method, publicOperation(op)])),
+    ])),
     ...(spec['x-api-actions'] ? {
-      'x-api-actions': spec['x-api-actions'].map(entry => ({ ...entry, path: runtimePath(entry.path) })),
+      'x-api-actions': spec['x-api-actions'].map(entry => ({ ...entry, path: runtimePath(entry.path), operation: publicOperation(entry.operation) })),
     } : {}),
   }
 }

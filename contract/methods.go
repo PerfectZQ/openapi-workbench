@@ -25,12 +25,27 @@ func Methods(spec Specification, nameMethod func(*Method) error) (map[string][]M
 			if err := nameMethod(&m); err != nil {
 				return nil, err
 			}
-			for _, old := range groups[m.Group] {
-				if old.Name == m.Name {
-					return nil, fmt.Errorf("duplicate SDK method %s.%s", m.Group, m.Name)
-				}
-			}
+
 			groups[m.Group] = append(groups[m.Group], m)
+		}
+	}
+	// Path-scoped Actions may share a wire name. Their business operation IDs
+	// provide distinct SDK names inside a single service.
+	for group, methods := range groups {
+		counts := map[string]int{}
+		for _, method := range methods {
+			counts[method.Name]++
+		}
+		seen := map[string]bool{}
+		for i := range methods {
+			method := &methods[i]
+			if counts[method.Name] > 1 && method.Name == method.Op.Action.Name && method.Op.Action.Path != "" && method.Op.BusinessID != "" {
+				method.Name = Identifier(method.Op.BusinessID)
+			}
+			if seen[method.Name] {
+				return nil, fmt.Errorf("duplicate SDK method %s.%s", group, method.Name)
+			}
+			seen[method.Name] = true
 		}
 	}
 	return groups, nil

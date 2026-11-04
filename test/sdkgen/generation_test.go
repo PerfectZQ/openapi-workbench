@@ -21,7 +21,7 @@ import (
 func TestProvidersGenerateIndependentAPI(t *testing.T) {
 	root := t.TempDir()
 	specPath := filepath.Join(root, "api.json")
-	spec := `{"swagger":"2.0","definitions":{"Item":{"type":"object","properties":{"title":{"type":"string"}}}},"paths":{"/catalog/items":{"get":{"operationId":"List","x-api-result-field":"title","responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}}}}`
+	spec := `{"swagger":"2.0","definitions":{"Item":{"type":"object","properties":{"title":{"type":"string"}}}},"paths":{"/catalog/lookup":{"post":{"operationId":"Lookup","x-api-operation":"catalog.lookup","x-api-action":{"name":"Find","path":"/catalog/actions","version":"2023-01-01"},"x-api-request":{"$ref":"#/definitions/Item"},"x-api-result":{"$ref":"#/definitions/Item"},"responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}},"/catalog/items":{"get":{"operationId":"List","x-api-result-field":"title","responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}}}}`
 	if err := os.WriteFile(specPath, []byte(spec), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -49,9 +49,9 @@ func TestProvidersGenerateIndependentAPI(t *testing.T) {
 	for file, fragments := range map[string][]string{
 		filepath.Join(goTarget.Directory, "config.gen.go"):       {"package catalog", "type Config struct", "BasePath string"},
 		filepath.Join(tsTarget.Directory, "src/config.gen.ts"):   {"export interface ClientConfig", "basePath?: string"},
-		filepath.Join(goTarget.Directory, "api_catalog.gen.go"):  {"package catalog", "func (s *CatalogService) List", `"/catalog/items"`},
+		filepath.Join(goTarget.Directory, "api_catalog.gen.go"):  {"package catalog", "func (s *CatalogService) List", `"/catalog/items"`, `actionPath: "/catalog/actions"`, `action: "Find"`},
 		filepath.Join(goTarget.Directory, "models.gen.go"):       {"type Item struct", "type CatalogListOutput struct"},
-		filepath.Join(tsTarget.Directory, "src/services.gen.ts"): {"export class CatalogClient", "listResult(input:", "list(input:", `"path":"/catalog/items"`},
+		filepath.Join(tsTarget.Directory, "src/services.gen.ts"): {"export class CatalogClient", "listResult(input:", "list(input:", `"path":"/catalog/items"`, `"actionPath":"/catalog/actions"`, `"action":"Find"`},
 		filepath.Join(tsTarget.Directory, "src/models.gen.ts"):   {"export type Item =", "export type CatalogListOutput = Item;"},
 	} {
 		data, err := os.ReadFile(file)

@@ -17,7 +17,7 @@ openapi-workbench/
 
 通用层只依赖标准库及本目录内代码，不导入业务 Handler、Service、数据库或项目运行配置。它不识别业务路由，也不内置业务包名、客户端名和输出位置。
 
-普通接入通过 `api-explorer sdk --spec ./swagger.json --out ./sdk` 生成完整工程。`sdkgen/project` 负责命令默认的 Provider 装配、命名和运行时模板，默认生成 Go / TypeScript，方法归 API 分组。完整工程支持标准 Swagger REST 请求及已实现的 `x-api-*` REST 投影；签名 Action 入口由 InnerTOPVersion 与认证回调显式开启，产品不内置业务 Action 路由。
+普通接入通过 `api-explorer sdk --spec ./swagger.json --out ./sdk` 生成完整工程。`sdkgen/project` 负责命令默认的 Provider 装配、命名和运行时模板，默认生成 Go / TypeScript，方法归 API 分组。完整工程支持标准 Swagger REST 请求及已实现的 `x-api-*` REST 投影；直连 Action 路径从操作的 `x-api-action.path` 读取，签名网关入口由 InnerTOPVersion 与认证回调开启。Go 和 TypeScript 方法保留线上的 Action 名称。同一服务中路径不同而同名的 Action 按业务操作 ID 生成 SDK 方法名。
 
 已有专属 SDK 的消费项目可继续自行配置 Provider 注册、输出与命名。业务命名规则通过 `Generator.NameMethod` 提供；通用层先归一化 Action 文档路径，再调用命名规则并校验方法重名。
 

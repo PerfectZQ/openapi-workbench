@@ -13,7 +13,7 @@ import (
 
 type businessParameter struct{ name, in string }
 type businessOperation struct {
-	method, path, action, version string
+	method, path, action, actionPath, version string
 	parameters                    []businessParameter
 	inputJSON, outputJSON         []string
 	file                          bool
@@ -31,10 +31,10 @@ func (c *Client) businessRequest(ctx context.Context, op businessOperation, inpu
 	}
 	var params []parameter
 	var body any = request
-	if c.config.Protocol == "action" && c.config.InnerTOPVersion == "" {
- return fmt.Errorf("sdk: Action gateway requires InnerTOPVersion and Authenticate; use REST for direct service calls")
- }
- action := c.config.InnerTOPVersion != ""
+	if c.config.Protocol == "action" && c.config.InnerTOPVersion == "" && op.actionPath == "" {
+		return fmt.Errorf("sdk: Action gateway requires InnerTOPVersion and Authenticate; use REST for direct service calls")
+	}
+	action := c.config.Protocol == "action" || c.config.InnerTOPVersion != ""
 	version := op.version
 	if version == "" {
 		version = BusinessVersion
@@ -49,8 +49,8 @@ func (c *Client) businessRequest(ctx context.Context, op businessOperation, inpu
 				return err
 			}
 		}
-		method, path = "POST", "/"
-		params = append(params, parameter{"Action", "query", op.action, true}, parameter{"Version", "query", version, true})
+		method, path = "POST", op.actionPath
+		params = append(params, parameter{"Version", "query", version, true})
 		body = map[string]any{"Request": request}
 	} else {
 		for _, binding := range op.parameters {

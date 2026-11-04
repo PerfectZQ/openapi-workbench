@@ -13,10 +13,13 @@ type methodInput struct {
 
 func (g *generator) businessInput(op contract.Operation, descriptor map[string]any) (methodInput, error) {
 	version := op.Action.Version
-	if version == "" {
+	if version == "" && op.Action.Name != "" {
 		version = g.spec.BusinessVersion
 	}
 	descriptor["action"], descriptor["version"], descriptor["file"] = op.Action.Name, version, op.File
+	if op.Action.Path != "" {
+		descriptor["actionPath"] = op.Action.Path
+	}
 	if len(op.InputJSON) > 0 {
 		descriptor["inputJSON"] = op.InputJSON
 	}

@@ -4,6 +4,7 @@ import { operations, publicSpecification, replacePathPrefix, initialDraft, prepa
 
 const operation = {
   summary: 'Read inventory',
+  'x-api-action': { name: 'ListItems', path: '/actions', version: '2026-10-22' },
   security: [{ SessionKey: [] }],
   parameters: [{ in: 'header', name: 'X-Session-Key', required: true, type: 'string' }],
   responses: { 200: { schema: { type: 'object', properties: { Count: { type: 'integer' } } } } },
@@ -56,6 +57,9 @@ test('公共路径同时映射 REST 与 Action，InnerTOP 完全使用传入服�
   const spec = publicSpecification(inventory, 'https://inventory.test', path => replacePathPrefix(path, '/inventory', '/gateway/stock'))
   assert.ok(spec.paths['/gateway/stock/items'])
   assert.equal(spec['x-api-actions'][0].path, '/gateway/stock/actions')
+  assert.equal(spec.paths['/gateway/stock/items'].get['x-api-action'].path, '/gateway/stock/actions')
+  assert.equal(spec['x-api-actions'][0].operation['x-api-action'].path, '/gateway/stock/actions')
+  assert.equal(inventory.paths['/items'].get['x-api-action'].path, '/actions')
   assert.equal(inventory['x-api-actions'][0].path, '/actions', '不得修改输入契约')
   assert.equal(replacePathPrefix('/inventory-other/items', '/inventory', '/gateway/stock'), '/inventory-other/items')
   const action = operations(spec).find(api => api.action)

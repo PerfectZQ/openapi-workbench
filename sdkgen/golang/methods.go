@@ -45,11 +45,18 @@ func (g *generator) writeMethod(b *strings.Builder, m contract.Method) error {
 func (g *generator) writeBusinessMethod(b *strings.Builder, m contract.Method) error {
 	prefix := m.Group + m.Name
 	g.models[prefix+"Input"], g.models[prefix+"Output"] = m.Op.Request, m.Op.Result
-	version := ""
-	if m.Op.Action.Version != "" {
-		version = fmt.Sprintf("version:%q,", m.Op.Action.Version)
+	actionBinding := ""
+	if m.Op.Action.Path != "" {
+		actionBinding = fmt.Sprintf("actionPath:%q,", m.Op.Action.Path)
 	}
-	fmt.Fprintf(b, "%s\nfunc(s *%sService) %s(ctx context.Context, input %sInput) (*%sOutput,error) {\nvar result %sOutput\nerr:=s.client.businessRequest(ctx,businessOperation{method:%q,path:%q,action:%q,%sparameters:[]businessParameter{", methodComment(m.Op, m.Name), m.Group, m.Name, prefix, prefix, prefix, m.Verb, m.Path, m.Name, version)
+	version := m.Op.Action.Version
+	if version == "" && m.Op.Action.Name != "" {
+		version = g.spec.BusinessVersion
+	}
+	if version != "" {
+		actionBinding += fmt.Sprintf("version:%q,", version)
+	}
+	fmt.Fprintf(b, "%s\nfunc(s *%sService) %s(ctx context.Context, input %sInput) (*%sOutput,error) {\nvar result %sOutput\nerr:=s.client.businessRequest(ctx,businessOperation{method:%q,path:%q,action:%q,%sparameters:[]businessParameter{", methodComment(m.Op, m.Name), m.Group, m.Name, prefix, prefix, prefix, m.Verb, m.Path, m.Op.Action.Name, actionBinding)
 	for _, parameter := range m.Op.Parameters {
 		if parameter.In == "query" || parameter.In == "path" {
 			fmt.Fprintf(b, "{name:%q,in:%q},", parameter.Name, parameter.In)
