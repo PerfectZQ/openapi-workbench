@@ -123,15 +123,6 @@ for (const basePath of [undefined, '', '/gateway', '/tenant/catalog']) {
   assert.equal(requestURL(config, '/catalog/items/a%2Fb', new URLSearchParams('q=x%2Fy&q=z')), 'https://example.test' + (basePath ?? '') + '/catalog/items/a%2Fb?q=x%2Fy&q=z');
   assert.equal(requestURL(config, '/', new URLSearchParams()), 'https://example.test' + (basePath ?? '') + '/');
 }
-const mounts = { '/': '/fallback', '/catalog': '/short', '/catalog/items': 'https://items.test/mounted/' };
-const config = configureClient({ endpoint: 'https://api.test', mounts });
-mounts['/catalog/items'] = '/changed';
-assert.equal(requestURL(config, '/catalog/items/a%2Fb', new URLSearchParams('q=x/y')), 'https://items.test/mounted/a%2Fb?q=x%2Fy');
-assert.equal(requestURL(config, '/catalog/items2', new URLSearchParams()), 'https://api.test/short/items2');
-assert.equal(requestURL(config, '/catalogue', new URLSearchParams()), 'https://api.test/fallback/catalogue');
-for (const target of ['//host', 'javascript:alert(1)', '/x?q=1', 'https://user:secret@host']) {
-  assert.throws(() => configureClient({ endpoint: 'https://api.test', mounts: { '/v1': target } }), /mount/);
-}
 for (const basePath of ['/', 'relative', '//host', '/gateway/', '/x/../y', '/x?q=1', '/x#fragment', '/x%2Fy', '/x\\y']) {
   assert.throws(() => configureClient({ endpoint: 'https://example.test', basePath }), /base path/);
 }

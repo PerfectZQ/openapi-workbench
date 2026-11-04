@@ -1,4 +1,4 @@
 package product
 
 // Version pins generated CLI projects to the same immutable product release.
-const Version = "v0.5.0"
+const Version = "v0.6.0"

@@ -10,9 +10,6 @@ export interface ClientConfig {
    * Example: /gateway + /v1/items sends /gateway/v1/items.
    * Supply a leading slash and no trailing slash. */
   basePath?: string;
-  /** Replace a contract path prefix with an HTTP(S) URL or an origin-relative path.
-   * The longest whole-segment match wins; basePath applies to unmatched paths. */
-  mounts?: Readonly<Record<string, string>>;
   protocol?: 'rest' | 'action';
   /** Signed gateway mode; basePath must be empty. */
   innerTOPVersion?: string;
@@ -36,31 +33,19 @@ export function configureClient(config: ClientConfig): Readonly<ClientConfig> {
   if (prefix && (prefix === '/' || !prefix.startsWith('/') || prefix.endsWith('/') || /[?#%\\]/.test(prefix) || prefix.includes('//') || prefix.includes('/.'))) {
     throw new Error('sdk: invalid base path');
   }
-  if (config.innerTOPVersion && (!config.authenticate || prefix || Object.keys(config.mounts ?? {}).length)) {
+  if (config.innerTOPVersion && (!config.authenticate || prefix)) {
     throw new Error('sdk: InnerTOP requires signing and cannot use a base path');
   }
   if (config.timeoutMs != null && (!Number.isSafeInteger(config.timeoutMs) || config.timeoutMs <= 0)) {
     throw new Error('sdk: timeoutMs must be a positive integer');
   }
-  const mounts: Record<string, string> = {};
-  for (const [source, target] of Object.entries(config.mounts ?? {}).sort(([a], [b]) => b.length - a.length)) {
-    if (!/^\/(?:[^/?#%\\]+(?:\/[^/?#%\\]+)*)?$/.test(source) || source.includes('/.')) throw new Error('sdk: invalid mount prefix');
-    if ((!/^https?:\/\//i.test(target) && !/^\/(?!\/)/.test(target)) || /[?#\\\s]/.test(target)) throw new Error('sdk: invalid mount target');
-    const base = new URL(target, url.origin);
-    if (base.username || base.password) throw new Error('sdk: invalid mount credentials');
-    mounts[source] = base.href.replace(/\/+$/, '');
-  }
-  return Object.freeze({ ...config, endpoint: url.origin, mounts: Object.freeze(mounts) });
+  return Object.freeze({ ...config, endpoint: url.origin });
 }
 
 /** Compose the origin, caller-supplied mount path and encoded operation path. */
 export function requestURL(config: ClientConfig, path: string, query: URLSearchParams): string {
   query.sort();
   const suffix = query.size ? '?' + query.toString() : '';
-  for (const [source, target] of Object.entries(config.mounts ?? {})) {
-    if (source === '/') return target + path + suffix;
-    if (source === path || path.startsWith(source + '/')) return target + path.slice(source.length) + suffix;
-  }
   return config.endpoint + (config.basePath ?? '') + path + suffix;
 }
 `)

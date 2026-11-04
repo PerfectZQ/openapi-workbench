@@ -55,7 +55,7 @@ v0.2.0 开始由 Provider 生成配置及 URL 逻辑。消费项目删除手写�
 
 CLI 生成的 TypeScript 包可直接用于现代浏览器和 Node.js。底层使用 Fetch、Web Streams、TextEncoder 和 AbortSignal。宿主通过 `authenticate(request)` 注入凭证，并通过调用的 `options.signal` 取消请求。默认超时为 30 秒，`timeoutMs: null` 只使用调用方的取消信号。
 
-`mounts: { "/v1": "/gateway" }` 将契约路径 `/v1/items` 映射到 `/gateway/items`。多个挂载按最长完整路径段匹配，未命中的请求沿用 basePath。挂载目标可指定受信任的 HTTP(S) 地址，认证回调将为该目标创建的请求设置凭证。签名网关固定使用签名入口。
+Go 和 TypeScript 客户端使用同一规则。例如配置 `basePath: "/gateway"` 后，操作路径 `/v1/items` 的请求地址为 `<endpoint>/gateway/v1/items`。从 v0.5.0 升级时，删除 TypeScript 的 `mounts` 配置，将部署前缀传给 `basePath`。历史服务路径由业务项目在生成或部署时处理；签名网关继续使用根路径。
 
 Swagger 操作可以通过 `"x-api-result-field": "payload"` 声明成功响应中的顶层业务字段。生成器核对响应模型（含引用及 allOf），在原有 `getItem()` 之外生成 `getItemResult()`。字段缺失抛出 `APIError`，显式返回的 null 原样保留。Go 方法继续返回契约中的响应类型。
 
