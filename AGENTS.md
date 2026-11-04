@@ -31,7 +31,7 @@ Go 1.26.4、Node.js 24、npm。通过 `GO_BIN=/path/to/go` 指定版本匹配的
 
 - `./script/bootstrap.sh`：只配置当前仓库 Git hooks/线性历史并安装前端依赖，不改变全局配置。
 - `GO_BIN=/path/to/go ./script/check.sh`：Go 格式/测试、前端构建/测试及补丁检查。
-- `./script/package.sh v0.4.0`：按前端版本生成同一 Release 的一个完整 npm 包和校验文件。
+- `./script/package.sh v0.5.0`：按前端版本生成同一 Release 的一个完整 npm 包和校验文件。
 - 测试集中在 `test/` 和 `frontend/test/`，从公开入口验证行为；不为测试导出私有 helper，不使用业务 Fake/Mock。
 - `.artifacts/`、依赖、缓存不提交。文档链接必须真实存在；临时诊断和测试脚本即用即删。
 

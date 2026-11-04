@@ -2,12 +2,12 @@
 
 基于 Swagger 的一站式扩展产品：接口文档、在线调试、CLI、Agent Skill 和 Go / TypeScript SDK 生成。安装包自带完整前端页面、全局 UI、编辑器、语言资源和字体，接入方提供 Swagger JSON 即可使用。
 
-v0.4.0 将 CLI、Skill 生成与标准认证鉴权合入同一产品；业务认证、权限策略和复合操作通过宿主适配接入。仓库与 Go module 地址仍为 `github.com/PerfectZQ/openapi-workbench`。
+v0.5.0 提供浏览器与 Node.js 共用的 TypeScript REST SDK，支持网关挂载和按契约读取结果字段；业务认证、权限策略和复合操作通过宿主适配接入。仓库与 Go module 地址仍为 `github.com/PerfectZQ/openapi-workbench`。
 
 ## 安装与使用
 
 ```bash
-go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.4.0
+go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.5.0
 
 # 一次生成页面、CLI、Agent Skill 和 Go / TypeScript SDK
 api-explorer generate --spec ./swagger.json --out ./api-tools --name inventory
@@ -43,7 +43,7 @@ mux.Handle("/api-explorer/", http.StripPrefix("/api-explorer",
 ```bash
 ./script/bootstrap.sh
 GO_BIN=/path/to/go1.26.4/bin/go ./script/check.sh
-./script/package.sh v0.4.0
+./script/package.sh v0.5.0
 ```
 
 开发环境为 Go 1.26.4、Node.js 24、npm。前端源码统一位于 `frontend/src/`，全局 UI 是其内部 `ui/` 目录，所有能力共用产品版本和安装包。`@api-explorer/react` 提供需要深度定制时的 React 入口，内部控件不再独立发布。

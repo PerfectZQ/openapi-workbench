@@ -21,7 +21,7 @@ openapi-workbench/
 
 已有专属 SDK 的消费项目可继续自行配置 Provider 注册、输出与命名。业务命名规则通过 `Generator.NameMethod` 提供；通用层先归一化 Action 文档路径，再调用命名规则并校验方法重名。
 
-消费项目的 Go / TypeScript SDK 是独立客户端工程，保留各自的请求编解码、认证集成、依赖与使用说明。Provider 生成操作、模型及 `config.gen.go` / `src/config.gen.ts`，统一拥有客户端配置校验和请求 URL 拼接；只有同时配置 `ArchivePath` 和 `ArchiveRoot` 时才归档，Git 安装的消费方仅配置 `Directory`；Provider 自身不生成客户端运行时；完整产品命令由 `sdkgen/project/templates/` 补齐客户端、工程配置与说明，不会生成或初始化业务服务，也不会将依赖安装目录和构建缓存装入归档。
+消费项目的 Go / TypeScript SDK 是独立客户端工程，保留各自的请求编解码、认证集成、依赖与使用说明。Provider 生成操作、模型及 `config.gen.go` / `src/config.gen.ts`，统一拥有客户端配置校验和请求 URL 拼接；只有同时配置 `ArchivePath` 和 `ArchiveRoot` 时才归档，Git 安装的消费方仅配置 `Directory`；TypeScript Provider 开启 SharedRuntime 后生成浏览器与 Node.js 共用的 runtime.gen.ts；完整产品命令由 `sdkgen/project/templates/` 补齐客户端、工程配置与说明，不会生成或初始化业务服务，也不会将依赖安装目录和构建缓存装入归档。
 
 ## 客户端 BasePath
 
@@ -50,6 +50,16 @@ v0.2.0 开始由 Provider 生成配置及 URL 逻辑。消费项目删除手写�
 - Go：删除本地 `Config`、`clientState` 与 `newClientState`；请求创建时使用生成的 `c.requestURL(path, query)`，不再自行拼 Endpoint 或改写业务前缀。
 - TypeScript：从 `config.gen.js` 导入 `ClientConfig`、`configureClient` 与 `requestURL`；构造时保存 `configureClient(config)` 的不可变结果，请求时调用 `requestURL(config, path, query)`。需要维持公开类型入口时 re-export `ClientConfig`，不重复声明接口。
 - 原有业务专属“替换某段路径”参数不等价于 BasePath；调用方按真实网关挂载填写新参数。生成器不提供业务路径兼容表。
+
+## TypeScript REST 运行时
+
+CLI 生成的 TypeScript 包可直接用于现代浏览器和 Node.js。底层使用 Fetch、Web Streams、TextEncoder 和 AbortSignal。宿主通过 `authenticate(request)` 注入凭证，并通过调用的 `options.signal` 取消请求。默认超时为 30 秒，`timeoutMs: null` 只使用调用方的取消信号。
+
+`mounts: { "/v1": "/gateway" }` 将契约路径 `/v1/items` 映射到 `/gateway/items`。多个挂载按最长完整路径段匹配，未命中的请求沿用 basePath。挂载目标可指定受信任的 HTTP(S) 地址，认证回调将为该目标创建的请求设置凭证。签名网关固定使用签名入口。
+
+Swagger 操作可以通过 `"x-api-result-field": "payload"` 声明成功响应中的顶层业务字段。生成器核对响应模型（含引用及 allOf），在原有 `getItem()` 之外生成 `getItemResult()`。字段缺失抛出 `APIError`，显式返回的 null 原样保留。Go 方法继续返回契约中的响应类型。
+
+自定义 TypeScript 工程可设置 `typescript.Provider{SharedRuntime: true}`，在自己的 `src/client.ts` 导出或扩展 `runtime.gen.js`。只需实现项目的身份和业务约定。自行维护传输层的项目可继续使用默认 Provider，如启用结果方法，传输层也需实现生成方法调用的 `result(response, field)`。
 
 ## Provider 协议
 

@@ -56,11 +56,12 @@ type Operation struct {
 		Stage       string `json:"stage"`
 		Description string `json:"description"`
 	} `json:"x-api-lifecycle"`
-	Parameters []Parameter
-	Responses  map[string]struct{ Schema Schema }
-	Security   []map[string][]string
-	BusinessID string `json:"x-api-operation"`
-	Action     struct {
+	Parameters  []Parameter
+	Responses   map[string]struct{ Schema Schema }
+	Security    []map[string][]string
+	ResultField string `json:"x-api-result-field"`
+	BusinessID  string `json:"x-api-operation"`
+	Action      struct {
 		Version string `json:"version"`
 		Name    string `json:"name"`
 	} `json:"x-api-action"`

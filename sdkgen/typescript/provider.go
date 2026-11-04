@@ -1,16 +1,22 @@
 package typescript
 
 import (
+	_ "embed"
 	"fmt"
 
 	"github.com/PerfectZQ/openapi-workbench/contract"
 	"github.com/PerfectZQ/openapi-workbench/sdkgen/artifact"
 )
 
+//go:embed runtime.ts.tmpl
+var runtimeSource string
+
 // Provider generates the standalone TypeScript SDK from the shared contract.
 type Provider struct {
 	Target     artifact.Target
 	ClientName string
+	// SharedRuntime writes runtime.gen.ts for a host client.ts to re-export or extend.
+	SharedRuntime bool
 }
 
 func (Provider) Language() string { return "typescript" }
@@ -32,6 +38,11 @@ func (p Provider) Generate(spec contract.Specification, groups map[string][]cont
 		return err
 	}
 	g := generator{spec: spec, names: names, models: models, output: p.Target.Directory, clientName: p.ClientName}
+	if p.SharedRuntime {
+		if err := g.writeTypeScript("runtime.gen.ts", generatedHeader+runtimeSource); err != nil {
+			return err
+		}
+	}
 	if err := g.writeConfig(); err != nil {
 		return err
 	}

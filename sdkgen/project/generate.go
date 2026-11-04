@@ -50,7 +50,7 @@ func Generate(specPath, directory string, languages []string) error {
 	generator := sdkgen.Generator{
 		Providers: []sdkgen.Provider{
 			golang.Provider{Target: artifact.Target{Directory: filepath.Join(stage, "go")}, Package: "sdk"},
-			typescript.Provider{Target: artifact.Target{Directory: filepath.Join(stage, "typescript")}, ClientName: "Client"},
+			typescript.Provider{Target: artifact.Target{Directory: filepath.Join(stage, "typescript")}, ClientName: "Client", SharedRuntime: true},
 		},
 		NameMethod: func(method *contract.Method) error {
 			method.Group = "API"

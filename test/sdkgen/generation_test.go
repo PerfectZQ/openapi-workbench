@@ -21,7 +21,7 @@ import (
 func TestProvidersGenerateIndependentAPI(t *testing.T) {
 	root := t.TempDir()
 	specPath := filepath.Join(root, "api.json")
-	spec := `{"swagger":"2.0","definitions":{"Item":{"type":"object","properties":{"title":{"type":"string"}}}},"paths":{"/catalog/items":{"get":{"operationId":"List","responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}}}}`
+	spec := `{"swagger":"2.0","definitions":{"Item":{"type":"object","properties":{"title":{"type":"string"}}}},"paths":{"/catalog/items":{"get":{"operationId":"List","x-api-result-field":"title","responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}}}}`
 	if err := os.WriteFile(specPath, []byte(spec), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestProvidersGenerateIndependentAPI(t *testing.T) {
 		filepath.Join(tsTarget.Directory, "src/config.gen.ts"):   {"export interface ClientConfig", "basePath?: string"},
 		filepath.Join(goTarget.Directory, "api_catalog.gen.go"):  {"package catalog", "func (s *CatalogService) List", `"/catalog/items"`},
 		filepath.Join(goTarget.Directory, "models.gen.go"):       {"type Item struct", "type CatalogListOutput struct"},
-		filepath.Join(tsTarget.Directory, "src/services.gen.ts"): {"export class CatalogClient", "list(input:", `"path":"/catalog/items"`},
+		filepath.Join(tsTarget.Directory, "src/services.gen.ts"): {"export class CatalogClient", "listResult(input:", "list(input:", `"path":"/catalog/items"`},
 		filepath.Join(tsTarget.Directory, "src/models.gen.ts"):   {"export type Item =", "export type CatalogListOutput = Item;"},
 	} {
 		data, err := os.ReadFile(file)
@@ -122,6 +122,15 @@ for (const basePath of [undefined, '', '/gateway', '/tenant/catalog']) {
   assert.ok(Object.isFrozen(config));
   assert.equal(requestURL(config, '/catalog/items/a%2Fb', new URLSearchParams('q=x%2Fy&q=z')), 'https://example.test' + (basePath ?? '') + '/catalog/items/a%2Fb?q=x%2Fy&q=z');
   assert.equal(requestURL(config, '/', new URLSearchParams()), 'https://example.test' + (basePath ?? '') + '/');
+}
+const mounts = { '/': '/fallback', '/catalog': '/short', '/catalog/items': 'https://items.test/mounted/' };
+const config = configureClient({ endpoint: 'https://api.test', mounts });
+mounts['/catalog/items'] = '/changed';
+assert.equal(requestURL(config, '/catalog/items/a%2Fb', new URLSearchParams('q=x/y')), 'https://items.test/mounted/a%2Fb?q=x%2Fy');
+assert.equal(requestURL(config, '/catalog/items2', new URLSearchParams()), 'https://api.test/short/items2');
+assert.equal(requestURL(config, '/catalogue', new URLSearchParams()), 'https://api.test/fallback/catalogue');
+for (const target of ['//host', 'javascript:alert(1)', '/x?q=1', 'https://user:secret@host']) {
+  assert.throws(() => configureClient({ endpoint: 'https://api.test', mounts: { '/v1': target } }), /mount/);
 }
 for (const basePath of ['/', 'relative', '//host', '/gateway/', '/x/../y', '/x?q=1', '/x#fragment', '/x%2Fy', '/x\\y']) {
   assert.throws(() => configureClient({ endpoint: 'https://example.test', basePath }), /base path/);

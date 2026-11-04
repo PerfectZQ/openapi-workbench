@@ -44,10 +44,16 @@ func validateNames(groups map[string][]contract.Method) error {
 		names := map[string]bool{}
 		for _, method := range groups[group] {
 			name := contract.CamelCase(method.Name)
-			if names[name] {
-				return fmt.Errorf("duplicate SDK method %s.%s", group, method.Name)
+			publicNames := []string{name}
+			if method.Op.ResultField != "" {
+				publicNames = append(publicNames, name+"Result")
 			}
-			names[name] = true
+			for _, name := range publicNames {
+				if names[name] {
+					return fmt.Errorf("duplicate SDK method %s.%s", group, method.Name)
+				}
+				names[name] = true
+			}
 		}
 	}
 	return nil
