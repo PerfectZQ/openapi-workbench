@@ -2,7 +2,8 @@ import { Fragment, useRef, useState } from 'react'
 import { Check, ChevronRight, Download, TriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { HelpTip } from './ui/HelpTip'
-import { actionIdentity, formatGroupLabel, operationGroup, operationLifecycle, type APIOperation, type Specification } from './contract'
+import { actionIdentity, type APIGroup, operationLifecycle, type APIOperation, type Specification } from './contract'
+import { catalogPath } from './catalog'
 import { schemaExample } from './request'
 import { SchemaReference } from './SchemaReference'
 import { FieldRow, FieldTable } from './FieldTable'
@@ -12,6 +13,7 @@ import type { RequestAdapter } from './host'
 import type { RequestSettings } from './settings'
 import { CodeBlock } from './CodeBlock'
 import { EnumValues } from './EnumValues'
+import { authorizationRequirements } from './authorization'
 import { AuthorizationRequirements } from './AuthorizationBadge'
 
 export function OperationDetail({
@@ -22,7 +24,7 @@ export function OperationDetail({
   onSettings,
   requestAdapter,
   onExport,
-  protocols,
+  protocols, modules,
   onProtocol,
 }: {
   spec: Specification
@@ -32,6 +34,7 @@ export function OperationDetail({
   onSettings(): void
   onExport?(): void
   requestAdapter?: RequestAdapter
+  modules: APIGroup[]
   protocols: APIOperation[]
   onProtocol(api: APIOperation): void
 }) {
@@ -40,6 +43,14 @@ export function OperationDetail({
   const [responseCode, setResponseCode] = useState(Object.keys(api.operation.responses)[0])
   const [responseMode, setResponseMode] = useState('schema')
   const identity = actionIdentity(api)
+  const paragraphs = api.operation.description?.trim().split(/\n+/).filter(Boolean) ?? []
+  const moreDescription = paragraphs.length > 1 && paragraphs.join(' ').length > 240
+  const [descriptionOpen, setDescriptionOpen] = useState(false)
+  const requirements = authorizationRequirements(spec, api)
+  const actionQuery = new URLSearchParams()
+  if (api.action) actionQuery.set('Action', api.action)
+  if (api.actionVersion) actionQuery.set('Version', api.actionVersion)
+  const route = api.runtimePath + (actionQuery.size ? '?' + actionQuery : '')
   const lifecycle = operationLifecycle(api.operation)
   const body = api.operation.parameters?.find((parameter) => parameter.in === 'body')
   const query = api.operation.parameters?.filter((parameter) => ['path', 'query'].includes(parameter.in)) ?? []
@@ -58,41 +69,44 @@ export function OperationDetail({
         </button>
       </nav>
       <article className="operation-reference">
-        <div className="api-breadcrumb">
-          <span>{t('swagger.reference')}</span>
-          {operationGroup(api).map((part, index) => <Fragment key={index}>
-            <ChevronRight size={13} aria-hidden="true" /><span>{formatGroupLabel(part)}</span>
-          </Fragment>)}
-        </div>
-        <div className="operation-heading">
-          {protocols.length > 1 && (
-            <div className="api-segments" role="group" aria-label={t('swagger.requestProtocol')}>
-              {protocols.map((entry) => (
-                <button key={entry.key} type="button" aria-pressed={api.key === entry.key} onClick={() => onProtocol(entry)}>
-                  {t(`swagger.protocol.${entry.protocol}`)}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="operation-eyebrow">
-            <span className="heading-with-help">
-              <span className={`protocol-label protocol-${api.protocol}`}>{t(`swagger.protocol.${api.protocol}`)}</span>
-              <HelpTip
-                label={t('swagger.protocolRecognition')}
-                description={
-                  <>
-                    <p>{t('swagger.protocolHint.' + api.protocol)}</p>
-                    <p>{t('swagger.protocolRule.' + api.protocol)}</p>
-                    {api.action && <p>{t('swagger.actionDispatch', { action: api.action })}</p>}
-                  </>
-                }
-                wide
-              />
-            </span>
-            <span className={`http-method method-${api.method.toLowerCase()}`}>{api.method}</span>
-            {api.operation.operationId && <code>{api.operation.operationId}</code>}
+        <div className="reference-context">
+          <div className="api-breadcrumb">
+            <span>{t('swagger.reference')}</span>
+            {catalogPath(api, modules).map((part, index) => <Fragment key={index}>
+              <ChevronRight size={13} aria-hidden="true" /><span>{part}</span>
+            </Fragment>)}
           </div>
+          <CopyButton value={window.location.href} label={t('swagger.copyLink')} showLabel />
+        </div>
+        <header className="operation-heading">
           <h1 tabIndex={-1}>{api.operation.summary || api.action || api.path}</h1>
+          <div className="operation-signature">
+            <div className="signature-meta">
+              <div className="heading-with-help">
+                {protocols.length > 1 ? (
+                  <div className="operation-protocols" role="group" aria-label={t('swagger.requestProtocol')}>
+                    {protocols.map((entry) => (
+                      <button key={entry.key} type="button" aria-pressed={api.key === entry.key} onClick={() => onProtocol(entry)}>
+                        {t(`swagger.protocol.${entry.protocol}`)}
+                        {protocols.filter(route => route.protocol === entry.protocol).length > 1 && ` · ${entry.actionVersion || entry.operation.operationId || entry.path}`}
+                      </button>
+                    ))}
+                  </div>
+                ) : <span>{t(`swagger.protocol.${api.protocol}`)}</span>}
+                <HelpTip label={t('swagger.requestProtocol')} description={<>
+                  <p>{t('swagger.protocolHint.' + api.protocol)}</p>
+                  <p>{t('swagger.protocolRule.' + api.protocol)}</p>
+                  {api.action && <p>{t('swagger.actionDispatch', { action: api.action })}</p>}
+                </>} wide />
+              </div>
+              {api.operation.operationId && <code>{api.operation.operationId}</code>}
+            </div>
+            <div className="operation-address">
+              <span className={`http-method method-${api.method.toLowerCase()}`}>{api.method}</span>
+              <code>{route}</code>
+              <CopyButton value={new URL(route, window.location.origin).href} label={t('swagger.copyAddress')} />
+            </div>
+          </div>
           {lifecycle !== 'active' && (
             <section className="api-lifecycle-notice" aria-label={t(`swagger.lifecycle.${lifecycle}`)}>
               <TriangleAlert size={18} aria-hidden="true" />
@@ -102,27 +116,28 @@ export function OperationDetail({
               </div>
             </section>
           )}
-          {api.operation.description && (
-            <section className="api-description" aria-label={t('swagger.operationDescription')}>
-              <h2>{t('swagger.operationDescription')}</h2>
-              {api.operation.description.split(/\n+/).map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
-              ))}
-            </section>
-          )}
-        </div>
-        <div className="operation-address">
-          <code>{api.runtimePath}</code>
-          <CopyButton
-            value={
-              new URL(api.runtimePath, window.location.origin).href +
-              (api.action ? `?Action=${encodeURIComponent(api.action)}${api.actionVersion ? `&Version=${api.actionVersion}` : ''}` : '')
-            }
-          />
-        </div>
+        </header>
+        {paragraphs.length > 0 && (
+          <section className="api-description" aria-label={t('swagger.operationDescription')}>
+            {(moreDescription && !descriptionOpen ? paragraphs.slice(0, 1) : paragraphs).map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+            {moreDescription && (
+              <button className="description-toggle" type="button" aria-expanded={descriptionOpen}
+                onClick={() => setDescriptionOpen(!descriptionOpen)}>
+                {t(descriptionOpen ? 'swagger.collapseDescription' : 'swagger.expandDescription')}
+                <ChevronRight size={13} aria-hidden="true" />
+              </button>
+            )}
+          </section>
+        )}
         <div className="operation-utilities">
-          <AuthorizationRequirements spec={spec} api={api} />
-          <CopyButton value={window.location.href} label={t('swagger.copyLink')} showLabel />
+          {requirements.length > 1 ? (
+            <details className="authorization-disclosure">
+              <summary>{t('swagger.authAlternatives', { count: requirements.length })}</summary>
+              <AuthorizationRequirements spec={spec} api={api} />
+            </details>
+          ) : <AuthorizationRequirements spec={spec} api={api} />}
           {api.protocol === 'innertop' && onExport && (
             <button type="button" className="operation-export" onClick={onExport} aria-haspopup="dialog">
               <Download size={16} aria-hidden="true" />

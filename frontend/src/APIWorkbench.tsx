@@ -15,7 +15,7 @@ import { CatalogResizeHandle } from './CatalogResizeHandle'
 import type { RequestSession } from './RequestConsole'
 import { OperationDetail } from './OperationDetail'
 import { InnerTOPExport } from './InnerTOPExport'
-import { operations, type APIOperation, type Specification } from './contract'
+import { catalogGroups, operationGroup, operations, type APIOperation, type Specification } from './contract'
 import type { APIWorkbenchHost } from './host'
 
 export type Locale = 'zh-CN' | 'en-US'
@@ -51,8 +51,27 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
   const menu = useRef<HTMLDialogElement>(null)
   const menuButton = useRef<HTMLButtonElement>(null)
   const catalog = useMemo(() => (spec ? operations(spec) : []), [spec])
-  const sessions = useMemo(() => new Map<string, RequestSession>(), [spec])
+  // A catalog entry may expose multiple wire routes. Only the contract can link them.
+  const families = useMemo(() => {
+    const groups = new Map<string, APIOperation[]>()
+    for (const api of catalog) {
+      const id = api.operation['x-api-operation'] || api.key
+      const routes = groups.get(id)
+      if (routes) routes.push(api)
+      else groups.set(id, [api])
+    }
+    return groups
+  }, [catalog])
   const selected = catalog.find((api) => encodeURIComponent(api.key) === selection)
+  const modules = useMemo(() => {
+    const entries = Array.from(families.values(), routes => selected && routes.includes(selected) ? selected : routes[0])
+    const groups = catalogGroups(entries)
+    for (const group of groups) group.label = host.moduleLabel?.(group.key.slice(1)) || group.label
+    return groups.sort((a, b) => a.label.localeCompare(b.label, language.language))
+  }, [families, selected, host, language.language])
+  const [moduleKey, setModuleKey] = useState('')
+  const sessions = useMemo(() => new Map<string, RequestSession>(), [spec])
+  useEffect(() => { setModuleKey(selected ? '/' + operationGroup(selected)[0] : '') }, [selected])
   useEffect(() => {
     const change = () => setSelection(window.location.hash.slice(1))
     window.addEventListener('hashchange', change)
@@ -67,15 +86,20 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
       menuButton.current?.focus()
     }
   }, [menuOpen])
-  function select(api?: APIOperation) {
+  function select(api?: APIOperation, focusProtocol = false) {
     const hash = api ? encodeURIComponent(api.key) : ''
+    setModuleKey(api ? '/' + operationGroup(api)[0] : '')
     window.location.hash = hash
     setSelection(hash)
     setMenuOpen(false)
     document.querySelector('.operation-workspace')?.scrollTo(0, 0)
-    requestAnimationFrame(() => document.querySelector<HTMLElement>('.api-layout h1')?.focus())
+    requestAnimationFrame(() => {
+      const target = focusProtocol ? '.operation-protocols [aria-pressed="true"]' : '.api-layout h1'
+      document.querySelector<HTMLElement>(target)?.focus({ preventScroll: true })
+    })
   }
   const [downloading, setDownloading] = useState(false)
+  const [failedSDK, setFailedSDK] = useState<'go' | 'typescript'>()
   useEffect(() => {
     document.title = spec ? `${spec.info.title} · API Explorer` : 'API Explorer'
   }, [spec, language.language])
@@ -96,10 +120,12 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
   async function sdk(language: 'go' | 'typescript') {
     if (!host.loadSDK) return
     setDownloading(true)
+    setFailedSDK(undefined)
     setError('')
     try {
       download(await host.loadSDK(language), language === 'typescript' ? 'sdk-typescript.zip' : 'sdk.zip')
     } catch (cause) {
+      setFailedSDK(language)
       setError((cause as Error).message)
     } finally {
       setDownloading(false)
@@ -175,7 +201,7 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
       {error && (
         <div className="api-feedback" role="alert">
           <p>{error}</p>
-          <button type="button" onClick={() => setAttempt((value) => value + 1)}>
+          <button type="button" onClick={() => failedSDK ? void sdk(failedSDK) : setAttempt((value) => value + 1)}>
             <RefreshCw size={16} />
             {t('swagger.retry')}
           </button>
@@ -184,7 +210,7 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
       {spec ? (
         <div className="api-layout">
           <aside id="api-sidebar" className="api-sidebar">
-            <APICatalog catalog={catalog} selected={selected} onSelect={select} />
+            <APICatalog families={families} modules={modules} moduleKey={moduleKey} onModule={setModuleKey} selected={selected} onSelect={select} />
             <CatalogResizeHandle />
           </aside>
           <div className="api-content">
@@ -198,11 +224,12 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
                 onSettings={() => setSettingsOpen(true)}
                 onExport={host.innerTOP ? () => setExporting(selected) : undefined}
                 requestAdapter={host.request}
-                protocols={selected.operation['x-api-operation'] ? catalog.filter((entry) => entry.operation['x-api-operation'] === selected.operation['x-api-operation']) : [selected]}
-                onProtocol={select}
+                modules={modules}
+                protocols={families.get(selected.operation['x-api-operation'] || selected.key)!}
+                onProtocol={api => select(api, true)}
               />
             ) : (
-              <APIOverview spec={spec} catalog={catalog.filter((entry) => !entry.actionVersion)} onSelect={select} />
+              <APIOverview spec={spec} modules={modules} moduleKey={moduleKey} onModule={setModuleKey} onSelect={select} />
             )}
           </div>
         </div>
@@ -242,7 +269,7 @@ function Workbench({ host, headerActions }: APIWorkbenchProps) {
               <X size={18} />
             </button>
           </header>
-          <APICatalog catalog={catalog} selected={selected} onSelect={select} />
+          <APICatalog families={families} modules={modules} moduleKey={moduleKey} onModule={setModuleKey} selected={selected} onSelect={select} />
         </dialog>
       )}
       {spec && settingsOpen && (

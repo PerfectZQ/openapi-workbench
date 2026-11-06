@@ -5,7 +5,7 @@ API Explorer 是一个完整的 Swagger 扩展产品，从 goswag 生成的同�
 ## 安装
 
 ```bash
-go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.8.0
+go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.9.0
 ```
 
 需要 Go 1.26.4。命令安装到 `go env GOBIN` 指定的位置，未设置时为 `$(go env GOPATH)/bin`；确保该目录在 PATH 中。产品已内置构建好的页面，不要求安装前端工具链。
@@ -43,7 +43,7 @@ api-explorer assets --spec /swagger/doc.json --out ./public/api-explorer
 如果使用 Go 服务，可直接依赖同一产品并挂载，无需导出：
 
 ```bash
-go get github.com/PerfectZQ/openapi-workbench@v0.8.0
+go get github.com/PerfectZQ/openapi-workbench@v0.9.0
 ```
 
 ```go

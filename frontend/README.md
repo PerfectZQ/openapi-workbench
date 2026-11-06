@@ -21,7 +21,7 @@ API Explorer 是基于 Swagger 的完整产品。普通接入直接挂载随产�
 在你自己的 React 项目中安装（需要 React / React DOM 19）：
 
 ```bash
-npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.8.0/api-explorer-react.tgz
+npm install https://github.com/PerfectZQ/openapi-workbench/releases/download/v0.9.0/api-explorer-react.tgz
 ```
 
 安装包包含编译后的代码与类型声明，所需基础控件、中英文文案、JSON 编辑器和字体已包含其中。导入页面组件及其样式：

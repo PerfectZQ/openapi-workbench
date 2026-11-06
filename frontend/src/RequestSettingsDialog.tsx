@@ -32,7 +32,8 @@ export function RequestSettingsDialog({
   const [submitted, setSubmitted] = useState(false)
   const [tab, setTab] = useState('standardAuthorizations')
   const types = authorizationTypes(spec, draft.customAuthorizations)
-  const issue = headerIssue(draft.headers) ?? customAuthorizationIssue(spec, draft.customAuthorizations)
+  const sharedHeaderIssue = headerIssue(draft.headers)
+  const issue = sharedHeaderIssue ?? customAuthorizationIssue(spec, draft.customAuthorizations)
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     const element = dialog.current!
@@ -66,7 +67,6 @@ export function RequestSettingsDialog({
             label={t('swagger.settingsTitle')}
             description={
               <>
-                <p>{t('swagger.settingsHint')}</p>
                 <p>{t(tab === 'sharedHeaders' ? 'swagger.sharedHeadersHint' : 'swagger.authorizationTypesHint')}</p>
               </>
             }
@@ -287,7 +287,7 @@ export function RequestSettingsDialog({
         )}
         {issue && !submitted && <p className="api-muted">{t('swagger.configurationHint')}</p>}
         {issue && submitted && (
-          <p className="request-error" role="alert">
+          <p className="request-error" role="alert" tabIndex={-1}>
             {t(`swagger.validation.${issue.code}`, { field: issue.field })}
           </p>
         )}
@@ -305,7 +305,11 @@ export function RequestSettingsDialog({
           type="button"
           onClick={() => {
             setSubmitted(true)
-            if (issue) return
+            if (issue) {
+              setTab(sharedHeaderIssue ? 'sharedHeaders' : 'customAuthorizations')
+              requestAnimationFrame(() => dialog.current?.querySelector<HTMLElement>('[role="alert"]')?.focus())
+              return
+            }
             onSave({
               ...draft,
               customAuthorizations: draft.customAuthorizations.map((type) => ({ ...type, name: type.name.trim() })),

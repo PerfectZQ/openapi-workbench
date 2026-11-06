@@ -18,6 +18,7 @@ export interface RequestAdapter {
 /** The host owns access, public routes and service integration configuration. */
 export interface APIWorkbenchHost {
   loadSpecification(): Promise<Specification>
+  moduleLabel?(tag: string): string | undefined
   loadSDK?(language?: 'go' | 'typescript'): Promise<Blob>
   request?: RequestAdapter
   innerTOP?: ExportOptions

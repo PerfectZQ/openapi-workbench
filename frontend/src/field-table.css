@@ -17,13 +17,13 @@
   min-width: 480px;
 }
 .api-field-table .field-name-column {
-  width: 36%;
+  width: 28%;
 }
 .api-field-table .field-type-column {
-  width: 112px;
+  width: 80px;
 }
 .api-field-table .field-required-column {
-  width: 76px;
+  width: 64px;
 }
 .api-field-table :is(th, td) {
   padding: 8px 10px;
@@ -80,7 +80,7 @@
   color: var(--text-secondary);
 }
 .field-description {
-  color: var(--text-secondary);
+  color: var(--text);
 }
 .field-description > :first-child {
   margin-top: 0;

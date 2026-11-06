@@ -74,7 +74,7 @@ export function FieldRow({
       <td><code className="field-type">{type}</code></td>
       <td className="field-requirement">
         <span className={required ? 'api-required' : 'field-optional'}>
-          {t(required ? 'swagger.required' : 'swagger.optional')}
+          {required === undefined ? '—' : t(required ? 'swagger.required' : 'swagger.optional')}
         </span>
       </td>
       <td className="field-description">{children}</td>

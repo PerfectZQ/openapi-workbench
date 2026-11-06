@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CircleAlert, ArrowUpRight, RotateCcw, ShieldCheck, Square, Terminal, Download, Trash2, WrapText, CornerDownLeft, Inbox } from 'lucide-react'
+import { CircleAlert, ArrowUpRight, RotateCcw, ShieldCheck, Square, Terminal, Download, Trash2, WrapText, CornerDownLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { HelpTip } from './ui/HelpTip'
 import { Select } from './ui/Select'
@@ -65,7 +65,11 @@ export function RequestConsole({
   const saved = sessions.get(api.key)
   const [draft, setDraft] = useState(() => saved?.draft ?? initialDraft(spec, api, adapter))
   const hasBody = api.operation.parameters?.some((parameter) => parameter.in === 'body')
-  const [tab, setTab] = useState(saved?.tab ?? (hasBody ? 'body' : 'parameters'))
+  const parameters = requestParameters(spec, api)
+  const queryCount = parameters.filter(p => !p.authentication && (p.in === 'query' || p.in === 'path')).length
+  const headerCount = parameters.filter(p => !p.authentication && p.in === 'header').length
+  const defaultTab = hasBody ? 'body' : !queryCount && headerCount ? 'headers' : 'parameters'
+  const [tab, setTab] = useState(saved?.tab ?? defaultTab)
   const [responseTab, setResponseTab] = useState(saved?.responseTab ?? 'body')
   const [result, setResult] = useState<ResponseResult | undefined>(saved?.result)
   const [error, setError] = useState(saved?.error ?? '')
@@ -97,7 +101,6 @@ export function RequestConsole({
   const effective = effectiveDraft(spec, api, draft, settings, adapter)
   const automatic = automaticRequestHeaders(spec, api, effective, adapter)
   const sharedHeaders = settings.headers.filter((header) => header.enabled)
-  const parameters = requestParameters(spec, api)
   const authentication = parameters.filter((parameter) => parameter.authentication)
   const authTypes = authorizationTypes(spec, settings.customAuthorizations)
   const selectedAuth = authTypes.find((type) => type.id === draft.authorization?.type)
@@ -202,38 +205,24 @@ export function RequestConsole({
     >
       <header className="console-title">
         <div>
-          <Terminal size={17} />
+          <Terminal size={17} aria-hidden="true" />
           <h2>{t(api.protocol === 'innertop' ? 'swagger.innerTOPDebug' : 'swagger.debug')}</h2>
+          <HelpTip label={t('swagger.debug')} description={t('swagger.sessionHint')} />
         </div>
-        <span className="api-live-dot">{window.location.host}</span>
       </header>
-      <p className="console-session-hint">{t('swagger.sessionHint')}</p>
       <div className="console-route">
         <span className={`http-method method-${api.method.toLowerCase()}`}>{api.method}</span>
         <code title={address}>{address || new URL(api.runtimePath, window.location.origin).href}</code>
-        {address && <CopyButton value={address} />}
+        {address && <CopyButton value={address} label={t('swagger.copyAddress')} />}
       </div>
-      <div className="api-segments" aria-label={t('swagger.requestParts')}>
-        {['parameters', ...(hasBody ? ['body'] : []), 'headers', 'auth'].map(
-          (key) => (
-            <button key={key} type="button" aria-pressed={tab === key} onClick={() => setTab(key)}>
-              {t(`swagger.${key}`)}
-              {key !== 'body' && key !== 'auth' && (
-                <small>
-                  {
-                    parameters.filter(
-                      (parameter) =>
-                        !parameter.authentication &&
-                        (key === 'headers'
-                          ? parameter.in === 'header'
-                          : parameter.in === 'query' || parameter.in === 'path'),
-                    ).length
-                  }
-                </small>
-              )}
-            </button>
-          ),
-        )}
+      <div className="api-segments" role="group" aria-label={t('swagger.requestParts')}>
+        {[...(!hasBody || queryCount ? ['parameters'] : []), ...(hasBody ? ['body'] : []), 'headers', 'auth'].map(key => (
+          <button key={key} type="button" aria-pressed={tab === key} onClick={() => setTab(key)}>
+            {t(`swagger.${key}`)}
+            {key === 'parameters' && queryCount > 0 && <small>{queryCount}</small>}
+            {key === 'headers' && headerCount > 0 && <small>{headerCount}</small>}
+          </button>
+        ))}
       </div>
       {tab === 'body' ? (
         <RequestBodyEditor
@@ -428,7 +417,7 @@ export function RequestConsole({
         <button
           type="button"
           className="primary-button request-send"
-          title={t('swagger.sendShortcut')}
+          title={t(sending ? 'swagger.cancelRequest' : 'swagger.sendShortcut')}
           onClick={
             sending
               ? () => {
@@ -443,7 +432,7 @@ export function RequestConsole({
           {sending ? <Square size={15} /> : <ArrowUpRight size={16} />}
           {t(sending ? 'swagger.cancelRequest' : 'swagger.send')}
         </button>
-        <kbd className="request-shortcut" aria-hidden="true">{navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} <CornerDownLeft size={12} /></kbd>
+        {!sending && <kbd className="request-shortcut" aria-hidden="true">{navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} <CornerDownLeft size={12} /></kbd>}
         <button
           type="button"
           title={t('swagger.reset')}
@@ -452,6 +441,9 @@ export function RequestConsole({
           disabled={sending}
           onClick={() => {
             setDraft(initialDraft(spec, api, adapter))
+            setTab(defaultTab)
+            setShowCurl(false)
+            setResponseTab('body')
             setResult(undefined)
             setError('')
             setNotice('')
@@ -555,11 +547,9 @@ export function RequestConsole({
             />
           </>
         ) : (
-          <div className="response-empty">
+          <div className="response-empty" role="status">
             {sending && <span className="request-progress" />}
-            {!sending && <Inbox size={22} strokeWidth={1.5} aria-hidden="true" />}
-            <strong>{t(sending ? 'swagger.sending' : 'swagger.readyToSend')}</strong>
-            <p>{t(sending ? 'swagger.waitResponse' : 'swagger.responseHint')}</p>
+            {t(sending ? 'swagger.waitResponse' : 'swagger.responseHint')}
           </div>
         )}
       </section>

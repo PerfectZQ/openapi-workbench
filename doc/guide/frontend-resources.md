@@ -44,7 +44,7 @@ mux.Handle("/api-explorer/", http.StripPrefix("/api-explorer",
 ```bash
 npm --prefix frontend ci
 GO_BIN=/path/to/go1.26.4/bin/go ./script/check.sh
-./script/package.sh v0.8.0
+./script/package.sh v0.9.0
 ```
 
 `frontend/assets/` 是完整预构建页面，由根 Go 包嵌入，也随唯一前端 npm 包分发。`frontend/dist/` 是深度定制需要的 React、core 和 UI 子路径产物；这些都是一个包的入口。`frontend/src/ui/` 只是内部代码目录，不拥有独立 manifest、版本或发布包。

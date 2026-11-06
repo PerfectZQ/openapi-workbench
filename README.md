@@ -7,7 +7,7 @@ Go 和 TypeScript SDK 根据契约选择 REST 路径或 Action 分发路径，�
 ## 安装与使用
 
 ```bash
-go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.8.0
+go install github.com/PerfectZQ/openapi-workbench/cmd/api-explorer@v0.9.0
 
 # 一次生成页面、CLI、Agent Skill 和 Go / TypeScript SDK
 api-explorer generate --spec ./swagger.json --out ./api-tools --name inventory
@@ -43,7 +43,7 @@ mux.Handle("/api-explorer/", http.StripPrefix("/api-explorer",
 ```bash
 ./script/bootstrap.sh
 GO_BIN=/path/to/go1.26.4/bin/go ./script/check.sh
-./script/package.sh v0.8.0
+./script/package.sh v0.9.0
 ```
 
 开发环境为 Go 1.26.4、Node.js 24、npm。前端源码统一位于 `frontend/src/`，全局 UI 是其内部 `ui/` 目录，所有能力共用产品版本和安装包。`@api-explorer/react` 提供需要深度定制时的 React 入口，内部控件不再独立发布。

@@ -84,7 +84,8 @@ export interface APIOperation {
 
 /** Slash-separated contract tags are directory paths, independent of runtime routing. */
 export function operationGroup(api: APIOperation): string[] {
-  return (api.operation.tags?.[0] || 'API').split('/').filter(Boolean)
+  const parts = (api.operation.tags?.[0] ?? '').split('/').filter(Boolean)
+  return parts.length ? parts : ['API']
 }
 
 export function formatGroupLabel(label: string): string {
