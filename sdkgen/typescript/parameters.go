@@ -11,37 +11,6 @@ type methodInput struct {
 	required bool
 }
 
-func (g *generator) businessInput(op contract.Operation, descriptor map[string]any) (methodInput, error) {
-	version := op.Action.Version
-	if version == "" && op.Action.Name != "" {
-		version = g.spec.BusinessVersion
-	}
-	descriptor["action"], descriptor["version"], descriptor["file"] = op.Action.Name, version, op.File
-	if op.Action.Path != "" {
-		descriptor["actionPath"] = op.Action.Path
-	}
-	if len(op.InputJSON) > 0 {
-		descriptor["inputJSON"] = op.InputJSON
-	}
-	if len(op.OutputJSON) > 0 {
-		descriptor["outputJSON"] = op.OutputJSON
-	}
-	var params []map[string]any
-	for _, p := range op.Parameters {
-		if p.In == "path" || p.In == "query" {
-			params = append(params, map[string]any{"name": p.Name, "in": p.In})
-		}
-	}
-	if params != nil {
-		descriptor["parameters"] = params
-	}
-	resolved, err := g.resolve(op.Request, map[string]bool{})
-	if err != nil {
-		return methodInput{}, err
-	}
-	return methodInput{schema: op.Request, required: len(resolved.Required) > 0}, nil
-}
-
 func legacyInput(m contract.Method, descriptor map[string]any) (methodInput, error) {
 	input := methodInput{schema: contract.Schema{Type: "object", Properties: map[string]contract.Schema{}}}
 	for _, security := range m.Op.Security {

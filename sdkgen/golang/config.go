@@ -13,7 +13,7 @@ type Config struct {
 	// Empty preserves the contract path. For example, /gateway + /v1/items
 	// sends /gateway/v1/items. Supply a leading slash and no trailing slash.
 	BasePath string
-	// Protocol selects "rest" (default) or "action" for Business services.
+	// Protocol selects "rest" (default) or "action" for operations that declare protocol routes.
 	Protocol string
 	HTTPClient *http.Client
 	Authenticate func(context.Context, *http.Request) error

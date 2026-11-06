@@ -11,7 +11,7 @@ func (g *generator) writeServices(groups map[string][]contract.Method) error {
 	var services strings.Builder
 	services.WriteString(generatedHeader)
 	services.WriteString("import { ClientRuntime } from './client.js';\nimport type { RequestOptions } from './client.js';\nimport type { ClientConfig } from './config.gen.js';\nimport type * as Models from './models.gen.js';\n\n")
-	fmt.Fprintf(&services, "export const businessVersion = %s;\n\n", quote(g.spec.BusinessVersion))
+	fmt.Fprintf(&services, "export const actionVersion = %s;\n\n", quote(g.spec.BusinessVersion))
 	fmt.Fprintf(&services, "export class %s extends ClientRuntime {\n", g.clientName)
 	for _, group := range contract.Keys(groups) {
 		fmt.Fprintf(&services, "  readonly %s: %sService;\n", contract.CamelCase(group), group)

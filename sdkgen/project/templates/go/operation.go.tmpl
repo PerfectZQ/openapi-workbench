@@ -11,49 +11,63 @@ import (
 	"strings"
 )
 
-type businessParameter struct{ name, in string }
-type businessOperation struct {
-	method, path, action, actionPath, version string
-	parameters                    []businessParameter
-	inputJSON, outputJSON         []string
-	file                          bool
+type restParameter struct{ name, in string }
+
+type restRoute struct {
+	method, path string
+	parameters   []restParameter
+	file         bool
 }
 
-// businessRequest keeps one typed request/result while adapting only wire locations and envelopes.
-func (c *Client) businessRequest(ctx context.Context, op businessOperation, input, output any) error {
+type actionRoute struct {
+	path, name, version   string
+	inputJSON, outputJSON []string
+}
+
+type operationRoutes struct {
+	rest   restRoute
+	action actionRoute
+}
+
+// call maps one typed input and result to the selected protocol.
+func (c *Client) call(ctx context.Context, routes operationRoutes, input, output any) error {
 	data, err := json.Marshal(input)
 	if err != nil {
 		return err
 	}
 	request := map[string]any{}
-	if err := decodeBusinessJSON(data, &request); err != nil {
+	if err := decodeJSON(data, &request); err != nil {
 		return err
 	}
 	var params []parameter
 	var body any = request
-	if c.config.Protocol == "action" && c.config.InnerTOPVersion == "" && op.actionPath == "" {
-		return fmt.Errorf("sdk: Action gateway requires InnerTOPVersion and Authenticate; use REST for direct service calls")
-	}
 	action := c.config.Protocol == "action" || c.config.InnerTOPVersion != ""
-	version := op.version
-	if version == "" {
-		version = BusinessVersion
-	}
-	if c.config.InnerTOPVersion != "" && c.config.InnerTOPVersion != version {
-		return fmt.Errorf("sdk: %s requires InnerTOP version %s (configured %s)", op.action, version, c.config.InnerTOPVersion)
-	}
-	method, path := op.method, op.path
+	var wire operation
 	if action {
-		for _, path := range op.inputJSON {
-			if err := projectBusinessJSON(request, strings.Split(path, "."), true); err != nil {
+		if routes.action.name == "" {
+			return fmt.Errorf("sdk: operation does not expose Action")
+		}
+		if routes.action.path == "" && c.config.InnerTOPVersion == "" {
+			return fmt.Errorf("sdk: direct Action requests require a route path")
+		}
+		for _, path := range routes.action.inputJSON {
+			if err := projectJSON(request, strings.Split(path, "."), true); err != nil {
 				return err
 			}
 		}
-		method, path = "POST", op.actionPath
+		wire = operation{method: "POST", path: routes.action.path, action: routes.action.name, innerTOP: true}
+		version := routes.action.version
+		if pinned := c.config.InnerTOPVersion; pinned != "" && pinned != version {
+			return fmt.Errorf("sdk: %s requires InnerTOP version %s (configured %s)", routes.action.name, version, pinned)
+		}
 		params = append(params, parameter{"Version", "query", version, true})
 		body = map[string]any{"Request": request}
 	} else {
-		for _, binding := range op.parameters {
+		if routes.rest.path == "" {
+			return fmt.Errorf("sdk: operation does not expose REST")
+		}
+		wire = operation{method: routes.rest.method, path: routes.rest.path}
+		for _, binding := range routes.rest.parameters {
 			value, exists := request[binding.name]
 			if exists && value != nil {
 				text := fmt.Sprint(value)
@@ -68,15 +82,11 @@ func (c *Client) businessRequest(ctx context.Context, op businessOperation, inpu
 			}
 			delete(request, binding.name)
 		}
-		if len(request) == 0 || method == "GET" {
+		if len(request) == 0 || wire.method == "GET" {
 			body = nil
 		}
 	}
-	wire := operation{method: method, path: path}
-	if action {
-		wire.action, wire.innerTOP = op.action, true
-	}
-	if op.file && !action {
+	if !action && routes.rest.file {
 		response, err := c.request(ctx, wire, params, body, nil)
 		if err != nil {
 			return err
@@ -94,7 +104,7 @@ func (c *Client) businessRequest(ctx context.Context, op businessOperation, inpu
 		if err != nil {
 			return err
 		}
-		return decodeBusinessJSON(data, output)
+		return decodeJSON(data, output)
 	}
 	var response json.RawMessage
 	if _, err := c.request(ctx, wire, params, body, &response); err != nil {
@@ -104,19 +114,19 @@ func (c *Client) businessRequest(ctx context.Context, op businessOperation, inpu
 		Data   json.RawMessage `json:"data"`
 		Result json.RawMessage `json:"Result"`
 	}
-	if err := decodeBusinessJSON(response, &envelope); err != nil {
+	if err := decodeJSON(response, &envelope); err != nil {
 		return err
 	}
 	result := envelope.Data
 	if action {
 		result = envelope.Result
-		if len(op.outputJSON) > 0 {
+		if len(routes.action.outputJSON) > 0 {
 			var object any
-			if err := decodeBusinessJSON(result, &object); err != nil {
+			if err := decodeJSON(result, &object); err != nil {
 				return err
 			}
-			for _, path := range op.outputJSON {
-				if err := projectBusinessJSON(object, strings.Split(path, "."), false); err != nil {
+			for _, path := range routes.action.outputJSON {
+				if err := projectJSON(object, strings.Split(path, "."), false); err != nil {
 					return err
 				}
 			}
@@ -127,16 +137,16 @@ func (c *Client) businessRequest(ctx context.Context, op businessOperation, inpu
 			}
 		}
 	}
-	return decodeBusinessJSON(result, output)
+	return decodeJSON(result, output)
 }
 
-func decodeBusinessJSON(data []byte, target any) error {
+func decodeJSON(data []byte, target any) error {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
 	return decoder.Decode(target)
 }
 
-func projectBusinessJSON(value any, path []string, encode bool) error {
+func projectJSON(value any, path []string, encode bool) error {
 	if value == nil || len(path) == 0 {
 		return nil
 	}
@@ -146,7 +156,7 @@ func projectBusinessJSON(value any, path []string, encode bool) error {
 			return fmt.Errorf("sdk: JSON projection expects an array")
 		}
 		for _, item := range items {
-			if err := projectBusinessJSON(item, path[1:], encode); err != nil {
+			if err := projectJSON(item, path[1:], encode); err != nil {
 				return err
 			}
 		}
@@ -161,7 +171,7 @@ func projectBusinessJSON(value any, path []string, encode bool) error {
 		return nil
 	}
 	if len(path) > 1 {
-		return projectBusinessJSON(child, path[1:], encode)
+		return projectJSON(child, path[1:], encode)
 	}
 	if encode {
 		data, err := json.Marshal(child)
@@ -176,7 +186,7 @@ func projectBusinessJSON(value any, path []string, encode bool) error {
 		return fmt.Errorf("sdk: Action result field %s is not a JSON string", path[0])
 	}
 	var decoded any
-	if err := decodeBusinessJSON([]byte(text), &decoded); err != nil {
+	if err := decodeJSON([]byte(text), &decoded); err != nil {
 		return err
 	}
 	object[path[0]] = decoded

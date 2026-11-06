@@ -19,6 +19,8 @@ openapi-workbench/
 
 普通接入通过 `api-explorer sdk --spec ./swagger.json --out ./sdk` 生成完整工程。`sdkgen/project` 负责命令默认的 Provider 装配、命名和运行时模板，默认生成 Go / TypeScript，方法归 API 分组。完整工程支持标准 Swagger REST 请求及已实现的 `x-api-*` REST 投影；直连 Action 路径从操作的 `x-api-action.path` 读取，签名网关入口由 InnerTOPVersion 与认证回调开启。Go 和 TypeScript 方法保留线上的 Action 名称。同一服务中路径不同而同名的 Action 按业务操作 ID 生成 SDK 方法名。
 
+Go 和 TypeScript 为同一操作生成一份协议描述，只输出已声明的入口。`rest` 包含方法、资源路径、路径和查询参数及文件响应标记，`action` 包含分发路径、动作名、有效版本和动态 JSON 字段。生成的服务方法将这份描述传给运行时的 `call`。从 v0.7 升级的自定义运行时需按这两个字段读取路由。默认 Action 版本常量为 Go 的 `ActionVersion` 和 TypeScript 的 `actionVersion`。
+
 已有专属 SDK 的消费项目可继续自行配置 Provider 注册、输出与命名。业务命名规则通过 `Generator.NameMethod` 提供；通用层先归一化 Action 文档路径，再调用命名规则并校验方法重名。
 
 消费项目的 Go / TypeScript SDK 是独立客户端工程，保留各自的请求编解码、认证集成、依赖与使用说明。Provider 生成操作、模型及 `config.gen.go` / `src/config.gen.ts`，统一拥有客户端配置校验和请求 URL 拼接；只有同时配置 `ArchivePath` 和 `ArchiveRoot` 时才归档，Git 安装的消费方仅配置 `Directory`；TypeScript Provider 开启 SharedRuntime 后生成浏览器与 Node.js 共用的 runtime.gen.ts；完整产品命令由 `sdkgen/project/templates/` 补齐客户端、工程配置与说明，不会生成或初始化业务服务，也不会将依赖安装目录和构建缓存装入归档。

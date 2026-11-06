@@ -11,7 +11,7 @@ import (
 func (g *generator) writeServices(groups map[string][]contract.Method) error {
 	output := g.output
 	var client strings.Builder
-	fmt.Fprintf(&client, "// BusinessVersion is the default Action protocol version; operations may declare their own version.\nconst BusinessVersion = %q\n", g.spec.BusinessVersion)
+	fmt.Fprintf(&client, "// ActionVersion is the default Action protocol version; operations may declare their own version.\nconst ActionVersion = %q\n", g.spec.BusinessVersion)
 	client.WriteString("type Client struct { clientState\n")
 	for _, group := range contract.Keys(groups) {
 		fmt.Fprintf(&client, "%s *%sService\n", group, group)

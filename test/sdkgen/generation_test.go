@@ -49,9 +49,9 @@ func TestProvidersGenerateIndependentAPI(t *testing.T) {
 	for file, fragments := range map[string][]string{
 		filepath.Join(goTarget.Directory, "config.gen.go"):       {"package catalog", "type Config struct", "BasePath string"},
 		filepath.Join(tsTarget.Directory, "src/config.gen.ts"):   {"export interface ClientConfig", "basePath?: string"},
-		filepath.Join(goTarget.Directory, "api_catalog.gen.go"):  {"package catalog", "func (s *CatalogService) List", `"/catalog/items"`, `actionPath: "/catalog/actions"`, `action: "Find"`},
+		filepath.Join(goTarget.Directory, "api_catalog.gen.go"):  {"package catalog", "func (s *CatalogService) List", `"/catalog/items"`, `action: actionRoute{path: "/catalog/actions"`, `name: "Find"`},
 		filepath.Join(goTarget.Directory, "models.gen.go"):       {"type Item struct", "type CatalogListOutput struct"},
-		filepath.Join(tsTarget.Directory, "src/services.gen.ts"): {"export class CatalogClient", "listResult(input:", "list(input:", `"path":"/catalog/items"`, `"actionPath":"/catalog/actions"`, `"action":"Find"`},
+		filepath.Join(tsTarget.Directory, "src/services.gen.ts"): {"export class CatalogClient", "listResult(input:", "list(input:", `"path":"/catalog/items"`, `"path": "/catalog/actions"`, `"name": "Find"`},
 		filepath.Join(tsTarget.Directory, "src/models.gen.ts"):   {"export type Item =", "export type CatalogListOutput = Item;"},
 	} {
 		data, err := os.ReadFile(file)

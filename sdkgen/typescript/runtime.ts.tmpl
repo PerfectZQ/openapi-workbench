@@ -21,13 +21,20 @@ export interface Operation {
   parameters?: readonly Parameter[];
   file?: boolean;
 }
-export interface BusinessOperation extends Omit<Operation, 'parameters'> {
-  action: string;
-  version: string;
-  actionPath?: string;
-  parameters?: readonly { name: string; in: 'path' | 'query' }[];
-  inputJSON?: readonly string[];
-  outputJSON?: readonly string[];
+export interface OperationRoutes {
+  rest?: {
+    method: string;
+    path: string;
+    parameters?: readonly { name: string; in: 'path' | 'query' }[];
+    file?: boolean;
+  };
+  action?: {
+    path?: string;
+    name: string;
+    version: string;
+    inputJSON?: readonly string[];
+    outputJSON?: readonly string[];
+  };
 }
 
 /** An HTTP failure or ResponseMetadata.Error, including errors sent with HTTP 200. */
@@ -80,7 +87,6 @@ type ParameterValue = Parameter & { value: unknown };
 export class ClientRuntime {
   private readonly config: Readonly<ClientConfig>;
   private readonly fetcher: typeof globalThis.fetch;
-  protected readonly actionPath?: string;
   protected validateResponse?(value: unknown, operation: Operation): void;
   protected onError?(error: APIError): void;
 
@@ -107,37 +113,39 @@ export class ClientRuntime {
     return await this.send(operation, parameters, body, options) as T;
   }
 
-  /** Business methods expose the native result rather than the HTTP envelope. */
-  async businessRequest<T>(operation: BusinessOperation, input: unknown = {}, options: RequestOptions = {}): Promise<T> {
-    const request = object(parseJSON(stringifyJSON(input)), 'business request');
-    const actionPath = operation.actionPath ?? this.actionPath;
-    if (this.config.protocol === 'action' && !this.config.innerTOPVersion && !actionPath) {
-      throw new Error('sdk: Action gateway requires innerTOPVersion and authenticate; use REST for direct service calls');
-    }
-    const action = this.config.protocol === 'action' || Boolean(this.config.innerTOPVersion);
-    if (this.config.innerTOPVersion && this.config.innerTOPVersion !== operation.version) {
-      throw new Error(`sdk: ${operation.action} requires InnerTOP version ${operation.version} (configured ${this.config.innerTOPVersion})`);
-    }
+  /** Map one typed input and result to the selected protocol. */
+  async call<T>(routes: OperationRoutes, input: unknown = {}, options: RequestOptions = {}): Promise<T> {
+    const request = object(parseJSON(stringifyJSON(input)), 'request');
+    const useAction = this.config.protocol === 'action' || Boolean(this.config.innerTOPVersion);
     const parameters: ParameterValue[] = [];
-    let wire: Operation = { method: operation.method, path: operation.path, file: operation.file && !action };
+    let wire: Operation;
     let body: unknown = request;
-    if (action) {
-      for (const path of operation.inputJSON ?? []) project(request, path.split('.'), true);
-      wire = { method: 'POST', path: actionPath ?? '/', action: operation.action, innerTOP: true };
-      parameters.push({ name: 'Version', in: 'query', value: operation.version, required: true });
+    if (useAction) {
+      const action = routes.action;
+      if (!action) throw new Error('sdk: operation does not expose Action');
+      if (!action.path && !this.config.innerTOPVersion) throw new Error('sdk: direct Action requests require a route path');
+      if (this.config.innerTOPVersion && this.config.innerTOPVersion !== action.version) {
+        throw new Error(`sdk: ${action.name} requires InnerTOP version ${action.version} (configured ${this.config.innerTOPVersion})`);
+      }
+      for (const path of action.inputJSON ?? []) project(request, path.split('.'), true);
+      wire = { method: 'POST', path: action.path ?? '/', action: action.name, innerTOP: true };
+      parameters.push({ name: 'Version', in: 'query', value: action.version, required: true });
       body = { Request: request };
     } else {
-      for (const binding of operation.parameters ?? []) {
+      const rest = routes.rest;
+      if (!rest) throw new Error('sdk: operation does not expose REST');
+      wire = rest;
+      for (const binding of rest.parameters ?? []) {
         const value = request[binding.name];
         if (value !== undefined && value !== null) {
           parameters.push({ ...binding, value, required: binding.in === 'path' });
         }
         delete request[binding.name];
       }
-      if (Object.keys(request).length === 0 || operation.method.toUpperCase() === 'GET') body = undefined;
+      if (Object.keys(request).length === 0 || rest.method.toUpperCase() === 'GET') body = undefined;
     }
     const response = await this.send(wire, parameters, body, options);
-    if (operation.file && !action) {
+    if (wire.file) {
       const file = response as Response;
       return {
         name: attachmentFilename(file.headers.get('Content-Disposition') ?? ''),
@@ -145,11 +153,11 @@ export class ClientRuntime {
         content: base64(new Uint8Array(await file.arrayBuffer())),
       } as T;
     }
-    const envelope = object(response, 'business response');
-    const result = action ? envelope.Result : envelope.data;
-    if (result === undefined || result === null) throw new Error('sdk: business response is missing its result');
-    if (action) {
-      for (const path of operation.outputJSON ?? []) project(result, path.split('.'), false);
+    const envelope = object(response, 'response');
+    const result = useAction ? envelope.Result : envelope.data;
+    if (result === undefined || result === null) throw new Error('sdk: response is missing its result');
+    if (useAction) {
+      for (const path of routes.action?.outputJSON ?? []) project(result, path.split('.'), false);
     }
     return result as T;
   }
