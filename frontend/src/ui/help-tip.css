@@ -17,21 +17,18 @@
   cursor: pointer;
   transition: color 140ms ease, background 140ms ease;
 }
-.help-tip-trigger { position: relative; width: 18px; height: 18px; min-width: 18px; min-height: 18px; }
-.help-tip-trigger::before { content: ''; position: absolute; inset: -3px; }
+.help-tip-trigger { position: relative; width: 20px; height: 20px; min-width: 20px; min-height: 20px; border-radius: 50%; }
+.help-tip-trigger::before { content: ''; position: absolute; inset: -2px; border-radius: inherit; }
 .help-tip-icon {
-  display: grid;
-  place-items: center;
+  display: block;
   flex: none;
-  width: 14px;
-  height: 14px;
-  border-radius: calc(var(--radius-control) / 2);
+  width: 16px;
+  height: 16px;
   color: var(--text-tertiary);
-  background: color-mix(in srgb, var(--text-tertiary) 10%, transparent);
-  font: var(--weight-semibold) var(--ui-caption)/1 var(--font-sans);
-  transition: color 140ms ease, background 140ms ease;
+  transition: color 140ms ease;
 }
-button:is(:hover, :focus-visible, [aria-expanded='true']) > .help-tip-icon { color: var(--primary); background: var(--primary-soft); }
+.help-tip-trigger:is(:hover, :focus-visible, [aria-expanded='true']) { background: var(--primary-soft); }
+button:is(:hover, :focus-visible, [aria-expanded='true']) > .help-tip-icon { color: var(--primary); }
 .help-tooltip-close:hover { color: var(--text); background: var(--surface-hover); }
 .help-tip-trigger:focus-visible, .help-tooltip-close:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .help-tooltip {
@@ -40,9 +37,9 @@ button:is(:hover, :focus-visible, [aria-expanded='true']) > .help-tip-icon { col
   z-index: 2000;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
+  gap: 8px;
   margin: 0;
-  padding: 20px;
+  padding: 16px;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-float);
   background: var(--surface-raised);
@@ -64,9 +61,9 @@ button:is(:hover, :focus-visible, [aria-expanded='true']) > .help-tip-icon { col
 .help-tooltip.is-copyable .help-tooltip-content { padding-block: 4px; }
 .help-tooltip-value { white-space: pre-wrap; user-select: text; }
 .help-tooltip.is-copyable:has(.copy-control[data-state='failed']) { grid-template-columns: minmax(0, 1fr); }
-.help-tooltip-header { display: flex; align-items: flex-start; gap: 12px; padding-inline-end: 28px; }
-.help-tooltip-header h2 { flex: 1; margin: 0; padding-block: 2px; color: var(--text-heading); font-size: var(--ui-body); font-weight: var(--weight-semibold); line-height: var(--line-ui); }
-.help-tooltip-close { position: absolute; top: 20px; right: 16px; }
+.help-tooltip-header { display: flex; align-items: flex-start; gap: 12px; padding-inline-end: 24px; }
+.help-tooltip-header h2 { flex: 1; margin: 0; color: var(--text-heading); font-size: var(--ui-body); font-weight: var(--weight-semibold); line-height: var(--line-ui); }
+.help-tooltip-close { position: absolute; top: 14px; right: 12px; }
 .help-tooltip-content { min-width: 0; min-height: 0; overflow: auto; overflow-wrap: anywhere; overscroll-behavior: contain; color: var(--text-secondary); }
 .help-tooltip-content:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 2px; }
 .help-tooltip-content :is(p, h3, h4, ul, ol, dl, pre) { margin: 0; }

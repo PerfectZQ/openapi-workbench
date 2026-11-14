@@ -2,3 +2,6 @@
 *.woff2 binary
 *.png binary
 *.tgz binary
+
+# Vite bundles contain dependency template strings with literal whitespace.
+frontend/assets/assets/*.js -whitespace
