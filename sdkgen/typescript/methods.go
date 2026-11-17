@@ -52,7 +52,7 @@ func (g *generator) writeMethod(b *strings.Builder, m contract.Method) error {
 	if !input.required {
 		argument += " = {}"
 	}
-	writeComment(b, m.Op.Summary, "  ")
+	writeMethodComment(b, m.Op)
 	fmt.Fprintf(b, "  %s(%s, options: RequestOptions = {}): Promise<%s> {\n", contract.CamelCase(m.Name), argument, output)
 	fmt.Fprintf(b, "    return this.client.%s<%s>(%s, input, options);\n  }\n\n", call, output, descriptor)
 	if field := m.Op.ResultField; field != "" {
@@ -63,6 +63,7 @@ func (g *generator) writeMethod(b *strings.Builder, m contract.Method) error {
 			return fmt.Errorf("success response has no declared field %q", field)
 		}
 		name := contract.CamelCase(m.Name)
+		writeMethodComment(b, m.Op)
 		fmt.Fprintf(b, "  %sResult(%s, options: RequestOptions = {}) {\n", name, argument)
 		fmt.Fprintf(b, "    return this.client.result(this.%s(input, options), %s);\n  }\n\n", name, quote(field))
 	}

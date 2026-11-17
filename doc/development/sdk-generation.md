@@ -21,6 +21,8 @@ openapi-workbench/
 
 Go 和 TypeScript 为同一操作生成一份协议描述，只输出已声明的入口。`rest` 包含方法、资源路径、路径和查询参数及文件响应标记，`action` 包含分发路径、动作名、有效版本和动态 JSON 字段。生成的服务方法将这份描述传给运行时的 `call`。从 v0.7 升级的自定义运行时需按这两个字段读取路由。默认 Action 版本常量为 Go 的 `ActionVersion` 和 TypeScript 的 `actionVersion`。
 
+两种语言的方法注释保留契约摘要和完整说明。弃用或待下线接口分别生成 Go `Deprecated:` 与 TypeScript `@deprecated` 提示，附带迁移说明；返回值辅助方法继承同一提示。注释中的换行保留，TypeScript 注释结束符会转义，不改变请求和响应协议。
+
 已有专属 SDK 的消费项目可继续自行配置 Provider 注册、输出与命名。业务命名规则通过 `Generator.NameMethod` 提供；通用层先归一化 Action 文档路径，再调用命名规则并校验方法重名。
 
 消费项目的 Go / TypeScript SDK 是独立客户端工程，保留各自的请求编解码、认证集成、依赖与使用说明。Provider 生成操作、模型及 `config.gen.go` / `src/config.gen.ts`，统一拥有客户端配置校验和请求 URL 拼接；只有同时配置 `ArchivePath` 和 `ArchiveRoot` 时才归档，Git 安装的消费方仅配置 `Directory`；TypeScript Provider 开启 SharedRuntime 后生成浏览器与 Node.js 共用的 runtime.gen.ts；完整产品命令由 `sdkgen/project/templates/` 补齐客户端、工程配置与说明，不会生成或初始化业务服务，也不会将依赖安装目录和构建缓存装入归档。

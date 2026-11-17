@@ -21,7 +21,7 @@ import (
 func TestProvidersGenerateIndependentAPI(t *testing.T) {
 	root := t.TempDir()
 	specPath := filepath.Join(root, "api.json")
-	spec := `{"swagger":"2.0","definitions":{"Item":{"type":"object","properties":{"title":{"type":"string"}}}},"paths":{"/catalog/lookup":{"post":{"operationId":"Lookup","x-api-operation":"catalog.lookup","x-api-action":{"name":"Find","path":"/catalog/actions","version":"2023-01-01"},"x-api-request":{"$ref":"#/definitions/Item"},"x-api-result":{"$ref":"#/definitions/Item"},"responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}},"/catalog/items":{"get":{"operationId":"List","x-api-result-field":"title","responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}}}}`
+	spec := `{"swagger":"2.0","definitions":{"Item":{"type":"object","properties":{"title":{"type":"string"}}}},"paths":{"/catalog/lookup":{"post":{"operationId":"Lookup","summary":"Find an item","description":"First paragraph.\n\nKeep */ safe.","x-api-lifecycle":{"stage":"sunset","description":"Use Search instead."},"x-api-operation":"catalog.lookup","x-api-action":{"name":"Find","path":"/catalog/actions","version":"2023-01-01"},"x-api-request":{"$ref":"#/definitions/Item"},"x-api-result":{"$ref":"#/definitions/Item"},"responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}},"/catalog/items":{"get":{"operationId":"List","summary":"List items","description":"List details.","deprecated":true,"x-api-result-field":"title","responses":{"200":{"schema":{"$ref":"#/definitions/Item"}}}}}}}`
 	if err := os.WriteFile(specPath, []byte(spec), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -65,6 +65,26 @@ func TestProvidersGenerateIndependentAPI(t *testing.T) {
 		}
 		if strings.Contains(string(data), "cloudlead") || strings.Contains(string(data), "CloudLead") {
 			t.Errorf("%s contains project identity", file)
+		}
+	}
+	services, err := os.ReadFile(filepath.Join(tsTarget.Directory, "src/services.gen.ts"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for method, fragments := range map[string][]string{
+		"lookup":     {"Find an item", "First paragraph.\n   *\n   * Keep * / safe.", "@deprecated", "Use Search instead."},
+		"list":       {"List items", "List details.", "@deprecated"},
+		"listResult": {"List items", "List details.", "@deprecated"},
+	} {
+		before, _, found := strings.Cut(string(services), "  "+method+"(")
+		start := strings.LastIndex(before, "  /**")
+		if !found || start < 0 {
+			t.Fatalf("missing documentation for %s", method)
+		}
+		for _, fragment := range fragments {
+			if !strings.Contains(before[start:], fragment) {
+				t.Errorf("%s documentation missing %q", method, fragment)
+			}
 		}
 	}
 	for _, target := range []artifact.Target{goTarget, tsTarget} {
