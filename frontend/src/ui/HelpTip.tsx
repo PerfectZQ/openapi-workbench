@@ -1,6 +1,6 @@
 import { cloneElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ComponentPropsWithRef, type ReactElement, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Info, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { CopyButton } from './CopyButton'
 import './help-tip.css'
@@ -8,7 +8,11 @@ import './help-tip.css'
 let closeActiveHelpTip: (() => void) | undefined
 
 export function HelpTipIcon() {
-  return <Info className="help-tip-icon" size={16} strokeWidth={1.75} aria-hidden="true" />
+  return <svg className="help-tip-icon" width={16} height={16} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <circle cx={8} cy={8} r={6.25} stroke="currentColor" strokeWidth={1.25} />
+    <path d="M8 4.75v3.4" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
+    <circle cx={8} cy={10.75} r={0.8} fill="currentColor" />
+  </svg>
 }
 
 export type HelpTipProps = {
