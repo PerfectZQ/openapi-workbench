@@ -1,30 +1,49 @@
 import { useEffect } from 'react'
 import './scroll-hints.css'
 
-// 只增强明确标记的原生滚动区，不插入容器、不接管滚轮或键盘。
+// 原生正文只增强明确标记的滚动区；文本框与 Monaco 仅调整滑块颜色。
 export function ScrollHints() {
   useEffect(() => {
-    const selector = '[data-scroll-hints], .scroll-hints'
+    const contentSelector = '[data-scroll-hints], .scroll-hints'
+    const sliderSelector = '.monaco-scrollable-element > .scrollbar > .slider'
+    const selector = `${contentSelector}, textarea, ${sliderSelector}`
     const regions = new Map<HTMLElement, Set<Element>>()
     const pending = new Set<HTMLElement>()
     const desktop = matchMedia('(min-width: 821px)')
     let frame = 0
 
-    const setLength = (element: HTMLElement, name: string, value: number) => {
-      const next = `${value}px`
-      if (element.style.getPropertyValue(name) !== next) element.style.setProperty(name, next)
+    const setValue = (element: HTMLElement, name: string, value: string) => {
+      if (element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value)
+    }
+    const setThumbStrength = (element: HTMLElement, axis: 'x' | 'y', length: number) => {
+      // 48px 以下突出短滑块，320px 以上保持克制；中间按实际长度连续减淡。
+      const strength = desktop.matches ? 62 - Math.min(1, Math.max(0, (length - 48) / 272)) * 48 : 62
+      setValue(element, `--scroll-thumb-strength-${axis}`, `${strength.toFixed(1)}%`)
     }
     const measure = (element: HTMLElement) => {
+      if (element.matches(sliderSelector)) {
+        const length = Math.max(element.clientWidth, element.clientHeight)
+        setThumbStrength(element, 'x', length)
+        setThumbStrength(element, 'y', length)
+        return
+      }
+      for (const [axis, viewport, content] of [
+        ['x', element.clientWidth, element.scrollWidth],
+        ['y', element.clientHeight, element.scrollHeight],
+      ] as const) {
+        const length = content > viewport ? Math.max(32, (viewport - 10) * viewport / content) : 320
+        setThumbStrength(element, axis, length)
+      }
       const height = element.clientHeight
-      const overflow = desktop.matches && height >= 64 && element.scrollHeight > height + 1
+      const overflow = element.matches(contentSelector) && desktop.matches && height >= 64 && element.scrollHeight > height + 1
         && /^(auto|scroll)$/.test(getComputedStyle(element).overflowY)
       element.toggleAttribute('data-scroll-overflow', overflow)
       if (!overflow) return
       const remaining = element.scrollHeight - height - element.scrollTop
-      setLength(element, '--scroll-hint-end', remaining <= 1 ? 0 : Math.min(24, remaining))
+      setValue(element, '--scroll-hint-end', `${remaining <= 1 ? 0 : Math.min(24, remaining)}px`)
       // 遮罩仅作用于正文，原生横纵滚动条和边框始终完整可见。
-      setLength(element, '--scroll-hint-gutter-x', element.offsetWidth - element.clientWidth)
-      setLength(element, '--scroll-hint-gutter-y', element.offsetHeight - height)
+      setValue(element, '--scroll-hint-gutter-x', `${element.offsetWidth - element.clientWidth}px`)
+      setValue(element, '--scroll-hint-gutter-y', `${element.offsetHeight - height}px`)
     }
     const schedule = (element: HTMLElement) => {
       if (!regions.has(element)) return
@@ -64,7 +83,7 @@ export function ScrollHints() {
     }
     const clear = (element: HTMLElement) => {
       element.removeAttribute('data-scroll-overflow')
-      for (const name of ['--scroll-hint-end', '--scroll-hint-gutter-x', '--scroll-hint-gutter-y']) element.style.removeProperty(name)
+      for (const name of ['--scroll-hint-end', '--scroll-hint-gutter-x', '--scroll-hint-gutter-y', '--scroll-thumb-strength-x', '--scroll-thumb-strength-y']) element.style.removeProperty(name)
     }
     const mutations = new MutationObserver(records => {
       let removed = false
@@ -99,12 +118,14 @@ export function ScrollHints() {
     discover(document.body)
     mutations.observe(document.body, { childList: true, subtree: true, characterData: true })
     document.addEventListener('scroll', scroll, { capture: true, passive: true })
+    document.addEventListener('input', scroll, { passive: true })
     desktop.addEventListener('change', refresh)
     return () => {
       mutations.disconnect()
       resize.disconnect()
       cancelAnimationFrame(frame)
       document.removeEventListener('scroll', scroll, true)
+      document.removeEventListener('input', scroll)
       desktop.removeEventListener('change', refresh)
       regions.forEach((_, region) => clear(region))
     }
