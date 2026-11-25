@@ -119,7 +119,7 @@ export function OptionDetails({ label, description, value, preview = false, chil
       onKeyDown={event => {
         if (event.key === 'Tab' && open && !event.shiftKey) { event.preventDefault(); event.stopPropagation(); panel.current?.focus() }
       }}><Info size={15} aria-hidden="true" /></button>
-    <div ref={panel} id={id} popover="manual" role="region" aria-label={tr('optionDetails.ccf83c05', {arg0: (label)})} tabIndex={-1} className="option-details-popover"
+    <div ref={panel} id={id} popover="manual" role="region" aria-label={tr('optionDetails.ccf83c05', {arg0: (label)})} tabIndex={-1} data-scroll-hints className="option-details-popover"
       onToggle={event => event.stopPropagation()}
       onPointerEnter={() => clearTimeout(timer.current)}
       onKeyDown={event => {

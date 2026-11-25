@@ -24,7 +24,7 @@ export function RequestFields({
   const id = useId()
   const identity = actionIdentity(api)
   return (
-    <div className="request-parameters api-field-table-scroll">
+    <div data-scroll-hints className="request-parameters api-field-table-scroll">
       {parameters.length > 0 && (
         <table className="api-field-table request-field-table" aria-label={t('swagger.requestParts')}>
           <colgroup>

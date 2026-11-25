@@ -198,7 +198,7 @@ export function HelpTip({ label, description, copyable, wide = false, placement 
         }
       }}>
       {!copyable && <header className="help-tooltip-header"><h2 id={`${id}-title`}>{label}</h2></header>}
-      <div ref={contentRef} id={`${id}-content`} className="help-tooltip-content" tabIndex={0} aria-label={t('helpTip.5d17cf9f', { arg0: label })}>
+      <div ref={contentRef} id={`${id}-content`} data-scroll-hints className="help-tooltip-content" tabIndex={0} aria-label={t('helpTip.5d17cf9f', { arg0: label })}>
         {copyable ? <span className="help-tooltip-value">{description}</span> : typeof description === 'string' ? description.split(/\n+/).map(part => part.trim()).filter(Boolean).map((paragraph, index) => <p key={index}>{paragraph}</p>) : description}
       </div>
       {copyable && <CopyButton value={description} label={t('copyButton.copyLabel', { label })} />}

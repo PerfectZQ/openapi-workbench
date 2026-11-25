@@ -171,7 +171,7 @@ export function InnerTOPExport({
                 {t('swagger.clear')}
               </button>
             </div>
-            <div className="innertop-list">
+            <div data-scroll-hints className="innertop-list">
               {visible.map((item) => (
                 <label key={item.key} className={`innertop-operation ${issues.get(item.key) ? 'has-limitation' : ''}`}>
                   <input
@@ -271,7 +271,7 @@ export function InnerTOPExport({
             </details>
             <details>
               <summary>{t('swagger.preview')}</summary>
-              <pre tabIndex={0}>{preview.json || preview.error}</pre>
+              <pre data-scroll-hints tabIndex={0}>{preview.json || preview.error}</pre>
             </details>
           </section>
         )}

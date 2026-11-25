@@ -35,7 +35,7 @@ export function APIOverview({ spec, modules, moduleKey, onModule, onSelect }: {
       {group.children.map(child => sections(child, path + ' / ' + child.label))}
     </section>
   }
-  return <article ref={view} className="api-overview">
+  return <article ref={view} data-scroll-hints className="api-overview">
     <div className="overview-content">
       {active ? <>
         <button className="overview-back" type="button" onClick={() => browse('')}><ArrowLeft size={14} />{t('swagger.allModules', { count: modules.length })}</button>

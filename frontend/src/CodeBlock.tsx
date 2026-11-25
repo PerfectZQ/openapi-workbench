@@ -43,7 +43,7 @@ export function CodeBlock({
     })
   }, [value, json])
   return (
-    <pre tabIndex={0} className={`api-code ${wrap ? 'is-wrapped' : ''} ${className}`}>
+    <pre tabIndex={0} data-scroll-hints className={`api-code ${wrap ? 'is-wrapped' : ''} ${className}`}>
       {content}
     </pre>
   )

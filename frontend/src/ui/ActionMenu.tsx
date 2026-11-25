@@ -29,7 +29,7 @@ export function ActionMenu({ children, disabled, label, description, icon, trigg
       onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); panel.current?.showPopover() } }}>
       {icon}<span>{label}</span>
     </button>
-    <div ref={panel} id={id} popover="auto" role="dialog" aria-label={label} className="action-menu" style={position}
+    <div ref={panel} id={id} popover="auto" role="dialog" aria-label={label} data-scroll-hints className="action-menu" style={position}
       onToggle={event => {
         const opened = event.newState === 'open'
         setOpen(opened)

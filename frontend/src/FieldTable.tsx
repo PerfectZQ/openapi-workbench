@@ -6,7 +6,7 @@ import './field-table.css'
 export function FieldTable({ label, children }: { label: string; children: ReactNode }) {
   const { t } = useTranslation()
   return (
-    <div className="api-field-table-scroll" role="region" aria-label={label} tabIndex={0}>
+    <div data-scroll-hints className="api-field-table-scroll" role="region" aria-label={label} tabIndex={0}>
       <table className="api-field-table api-reference-table" aria-label={label}>
         <colgroup>
           <col className="field-name-column" />

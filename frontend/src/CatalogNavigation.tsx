@@ -119,7 +119,7 @@ export function CatalogNavigation({ modules, routes, filtering, selected, module
           onClick={() => setExpanded(previous => new Set([...previous].filter(key => !keys.includes(key))))}><ChevronsDownUp size={15} /></button>
       </div>}
     </div>}
-    <nav ref={nav} className="catalog-groups" aria-label={t('swagger.catalog')} onKeyDown={move}>
+    <nav ref={nav} data-scroll-hints className="catalog-groups" aria-label={t('swagger.catalog')} onKeyDown={move}>
       {filtering ? (results.size ? [...results].map(([path, apis]) => (
         <section className="catalog-result-group" key={path}>
           <h3><Folder size={13} />{path}</h3><ul className="catalog-entries">{apis.map(operation)}</ul>

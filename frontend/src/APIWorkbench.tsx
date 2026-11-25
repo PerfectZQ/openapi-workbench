@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
 import i18next from 'i18next'
 import { uiTranslations } from './ui/locales'
+import { ScrollHints } from './ui/ScrollHints'
 import zhCN from './locales/zh-CN.json'
 import enUS from './locales/en-US.json'
 import { Download, RefreshCw, FileJson, Menu, X, Braces, ChevronDown, KeyRound } from 'lucide-react'
@@ -35,7 +36,7 @@ export function APIWorkbench({ locale = 'zh-CN', ...props }: APIWorkbenchProps) 
     return instance
   })
   useEffect(() => { void language.changeLanguage(locale) }, [language, locale])
-  return <I18nextProvider i18n={language}><Workbench {...props} /></I18nextProvider>
+  return <I18nextProvider i18n={language}><ScrollHints /><Workbench {...props} /></I18nextProvider>
 }
 
 function Workbench({ host, headerActions }: APIWorkbenchProps) {

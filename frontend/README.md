@@ -84,3 +84,17 @@ optimizeDeps: { exclude: ['@api-explorer/react'] },
 ```
 
 组件按需使用已有主题和 i18n 上下文；Monaco Worker 由 Vite 处理。普通页面挂载无需这些配置。
+
+仅复用控件的宿主在应用根部挂载一次 `ScrollHints`，并在原生正文滚动元素上设置 `data-scroll-hints`。组件自动跟随内容、尺寸与滚动位置更新下沿渐隐；不增加 DOM 包装，不接管滚轮、触控板或键盘。固定标题与底部动作应继续放在滚动正文之外。`APIWorkbench` 已内置此能力，无需重复挂载。
+
+第三方滚动组件不透传 `data-*` 属性时，可在其原生滚动元素的 `className` 中添加 `scroll-hints`，使用相同实现。
+
+```tsx
+import { ScrollHints } from '@api-explorer/react/ui/ScrollHints'
+import '@api-explorer/react/ui/styles/scrollbars.css'
+
+<>
+  <ScrollHints />
+  <div data-scroll-hints className="scrollable-content">{children}</div>
+</>
+```

@@ -56,7 +56,7 @@ export function OperationDetail({
   const query = api.operation.parameters?.filter((parameter) => ['path', 'query'].includes(parameter.in)) ?? []
   const response = api.operation.responses[responseCode]
   return (
-    <div className={`operation-workspace protocol-${api.protocol}`} ref={workspace}>
+    <div data-scroll-hints className={`operation-workspace protocol-${api.protocol}`} ref={workspace}>
       <nav className="operation-jumps" aria-label={t('swagger.workspaceSections')}>
         <button type="button" onClick={() => workspace.current?.scrollTo(0, 0)}>
           {t('swagger.reference')}

@@ -86,7 +86,7 @@ export function RequestSettingsDialog({
           </button>
         ))}
       </div>
-      <div className="settings-content">
+      <div data-scroll-hints className="settings-content">
         {tab !== 'sharedHeaders' ? (
           <>
             <div className="settings-schemes">

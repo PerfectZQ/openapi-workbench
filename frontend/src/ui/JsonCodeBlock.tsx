@@ -14,7 +14,7 @@ export function JsonCodeBlock({ text, label, onChange, invalid = false, describe
   return <div className={`json-code-block ${onChange ? 'is-editable' : ''}`}>
     {!onChange && <div className="json-code-language"><span>JSON</span></div>}
     <div className="json-code-body" style={onChange ? { height: `${Math.min(16, Math.max(4, text.split('\n').length + 1)) * 20 + 24}px` } : undefined}>
-      <pre ref={preview} aria-hidden={onChange ? true : undefined} aria-label={onChange ? undefined : label} tabIndex={onChange ? undefined : 0}><code className="language-json">{text.length > 65536 ? text : <JsonTokens text={text} />}{'\n'}</code></pre>
+      <pre data-scroll-hints ref={preview} aria-hidden={onChange ? true : undefined} aria-label={onChange ? undefined : label} tabIndex={onChange ? undefined : 0}><code className="language-json">{text.length > 65536 ? text : <JsonTokens text={text} />}{'\n'}</code></pre>
       {onChange && <textarea aria-label={label} aria-invalid={invalid} aria-describedby={describedBy} spellCheck={false} wrap="off" autoCapitalize="off" autoComplete="off" value={text} onChange={(event) => onChange(event.target.value)} onScroll={(event) => {
         if (preview.current) { preview.current.scrollTop = event.currentTarget.scrollTop; preview.current.scrollLeft = event.currentTarget.scrollLeft }
       }} />}

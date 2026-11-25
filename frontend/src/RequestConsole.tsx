@@ -193,7 +193,7 @@ export function RequestConsole({
   }
   return (
     <aside
-      className="request-console"
+      data-scroll-hints className="request-console"
       aria-label={t('swagger.debug')}
       onKeyDownCapture={(event) => {
         if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {

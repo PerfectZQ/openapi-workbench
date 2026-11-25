@@ -165,7 +165,7 @@ export function Select({ value = '', onValueChange, children, placeholder, optio
           }} />
         {query && <button type="button" aria-label={tr('select.clearSearch')} onClick={() => { setQuery(''); setActive(String(value)); input.current?.focus() }}><X size={15} aria-hidden="true" /></button>}
       </div>
-      <div ref={list} id={`${menuID}-list`} role="listbox" aria-label={label} className="select-viewport">
+      <div ref={list} id={`${menuID}-list`} role="listbox" aria-label={label} data-scroll-hints className="select-viewport">
         {open && matches.map((option, index) => <OptionDetails key={option.value} label={option.label} description={showOptionDetails ? option.description : undefined} value={showOptionDetails ? option.identifier : undefined}>
           <button type="button" id={`${menuID}-option-${index}`} role="option" aria-selected={option.value === String(value)} disabled={option.disabled} tabIndex={-1}
             className="select-option" data-state={option.value === String(value) ? 'checked' : 'unchecked'} data-highlighted={option.value === activeValue || undefined} data-disabled={option.disabled || undefined}
