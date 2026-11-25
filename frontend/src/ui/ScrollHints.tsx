@@ -17,7 +17,7 @@ export function ScrollHints() {
     }
     const setThumbStrength = (element: HTMLElement, axis: 'x' | 'y', length: number) => {
       // 48px 以下突出短滑块，320px 以上保持克制；中间按实际长度连续减淡。
-      const strength = desktop.matches ? 62 - Math.min(1, Math.max(0, (length - 48) / 272)) * 48 : 62
+      const strength = desktop.matches ? 62 - Math.min(1, Math.max(0, (length - 48) / 272)) * 54 : 62
       setValue(element, `--scroll-thumb-strength-${axis}`, `${strength.toFixed(1)}%`)
     }
     const measure = (element: HTMLElement) => {
