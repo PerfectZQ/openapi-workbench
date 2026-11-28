@@ -23,6 +23,11 @@
 .select-search button:hover { background: var(--surface-hover); }
 .select-search button:focus-visible, .select-option:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .select-empty { margin: 0; padding: 14px 11px; color: var(--text-secondary); font-size: var(--ui-control); }
+.select-search-error { display: flex; align-items: center; gap: 8px; padding: 14px 11px; color: var(--danger); font-size: var(--ui-control); }
+.select-search-error p { flex: 1; margin: 0; }
+.select-search-error button { flex-shrink: 0; padding: 4px 8px; border: 0; border-radius: var(--radius-control); background: var(--surface-muted); color: var(--text); font: inherit; cursor: pointer; }
+.select-search-error button:hover { background: var(--surface-hover); }
+.select-search-error button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 @media (max-width: 820px), (pointer: coarse) {
   .select-menu .select-search input, .select-search button, .select-option { min-height: 44px; }
   .select-search button { width: 44px; }

@@ -1,15 +1,26 @@
-import { Children, isValidElement, useCallback, useId, useLayoutEffect, useRef, useState, type ComponentPropsWithoutRef, type OptionHTMLAttributes, type ReactElement, type ReactNode } from 'react'
+import { Children, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ComponentPropsWithoutRef, type OptionHTMLAttributes, type ReactElement, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { OptionDetails } from './OptionDetails'
 import './select.css'
 
+export interface SelectOption {
+  value: string
+  label: string
+  identifier?: string
+  description?: string
+  disabled?: boolean
+}
+
 export interface SelectProps extends Omit<ComponentPropsWithoutRef<'button'>, 'value' | 'defaultValue' | 'onChange' | 'children'> {
   value?: string | number
-  onValueChange?: (value: string) => void
+  onValueChange?: (value: string, option: SelectOption) => void
   children: ReactNode
   placeholder?: string
+  searchPlaceholder?: string
+  // 远程候选只在非空关键词下读取；children 保留当前选择和清空选项。
+  loadOptions?: (keyword: string, signal: AbortSignal) => Promise<SelectOption[]>
   optionIcons?: Readonly<Record<string, ReactNode>>
   optionBadges?: Readonly<Record<string, ReactNode>>
   showOptionDetails?: boolean
@@ -23,7 +34,7 @@ function optionText(value: ReactNode): string {
 }
 
 // 所有单选共用搜索与键盘行为；原生 Popover 管理顶层显示、嵌套和区域外关闭。
-export function Select({ value = '', onValueChange, children, placeholder, optionIcons, optionBadges, showOptionDetails = true, onCloseAutoFocus, readOnly = false, renderTrigger = button => button, className = '', disabled, name, id, onClick, onKeyDown, ...props }: SelectProps) {
+export function Select({ value = '', onValueChange, children, placeholder, searchPlaceholder, loadOptions, optionIcons, optionBadges, showOptionDetails = true, onCloseAutoFocus, readOnly = false, renderTrigger = button => button, className = '', disabled, name, id, onClick, onKeyDown, ...props }: SelectProps) {
   const { t: tr } = useTranslation()
   const menuID = useId()
   const trigger = useRef<HTMLButtonElement>(null)
@@ -39,15 +50,25 @@ export function Select({ value = '', onValueChange, children, placeholder, optio
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [active, setActive] = useState<string>()
-  const options = Children.toArray(children).flatMap(child => {
+  const [composing, setComposing] = useState(false)
+  const [retry, setRetry] = useState(0)
+  const [result, setResult] = useState<{ keyword: string; options?: SelectOption[]; failed?: boolean }>()
+  const loader = useRef(loadOptions)
+  loader.current = loadOptions
+  const remote = !!loadOptions
+  const keyword = query.trim()
+  const current = result?.keyword === keyword ? result : undefined
+  const loading = open && remote && !!keyword && !composing && !current
+  const options: SelectOption[] = Children.toArray(children).flatMap(child => {
     if (!isValidElement<OptionHTMLAttributes<HTMLOptionElement> & { 'data-identifier'?: string }>(child)) return []
     const label = child.props.label ?? optionText(child.props.children)
     const value = String(child.props.value ?? label)
     return [{ value, identifier: child.props['data-identifier'] ?? value, label, description: child.props.title, disabled: child.props.disabled }]
   })
   const selected = options.find(option => option.value === String(value))
-  const keyword = query.trim().toLocaleLowerCase()
-  const matches = options.filter(option => `${option.label} ${option.identifier} ${option.value} ${option.description ?? ''}`.toLocaleLowerCase().includes(keyword))
+  const matches = remote && keyword
+    ? composing ? [] : current?.options ?? []
+    : options.filter(option => `${option.label} ${option.identifier ?? option.value} ${option.value} ${option.description ?? ''}`.toLocaleLowerCase().includes(keyword.toLocaleLowerCase()))
   const available = matches.filter(option => !option.disabled)
   const activeValue = available.some(option => option.value === active) ? active : available[0]?.value
   const activeIndex = matches.findIndex(option => option.value === activeValue)
@@ -60,14 +81,32 @@ export function Select({ value = '', onValueChange, children, placeholder, optio
     const focusInside = menu.current?.contains(document.activeElement) || document.activeElement === document.body
     if (menu.current?.matches(':popover-open')) menu.current.hidePopover()
     setOpen(false)
+    setResult(undefined)
+    setComposing(false)
     const event = new Event('select.close', { cancelable: true })
     onCloseAutoFocus?.(event)
     if (!event.defaultPrevented && (restoreFocus ?? focusInside)) trigger.current?.focus({ preventScroll: true })
   }
   const choose = (next: string) => {
-    if (next !== String(value)) onValueChange?.(next)
+    const option = available.find(option => option.value === next)
+    if (!option || disabled || readOnly) return
+    if (next !== String(value)) onValueChange?.(next, option)
     close(true)
   }
+
+  useEffect(() => {
+    if (!open || !remote || !keyword || composing || disabled || readOnly) return
+    const controller = new AbortController()
+    const timeout = setTimeout(async () => {
+      try {
+        const options = await loader.current!(keyword, controller.signal)
+        if (!controller.signal.aborted) setResult({ keyword, options })
+      } catch {
+        if (!controller.signal.aborted) setResult({ keyword, failed: true })
+      }
+    }, 300)
+    return () => { clearTimeout(timeout); controller.abort() }
+  }, [open, remote, keyword, composing, disabled, readOnly, retry])
 
   useLayoutEffect(() => {
     const popup = menu.current
@@ -157,16 +196,20 @@ export function Select({ value = '', onValueChange, children, placeholder, optio
         }
       }}>
       <div className="select-search"><Search size={16} aria-hidden="true" />
-        <input ref={input} type="search" role="combobox" aria-label={tr('select.search')} placeholder={tr('select.searchPlaceholder')}
+        <input ref={input} type="search" role="combobox" aria-label={tr('select.search')} placeholder={searchPlaceholder || tr(remote ? 'select.remotePlaceholder' : 'select.searchPlaceholder')}
           aria-expanded={open} aria-autocomplete="list" aria-controls={`${menuID}-list`} aria-activedescendant={activeIndex >= 0 ? `${menuID}-option-${activeIndex}` : undefined}
-          autoComplete="off" value={query} onChange={event => { setQuery(event.target.value); setActive(undefined) }}
+          autoComplete="off" value={query} onChange={event => {
+            if (event.target.value.trim() !== keyword) setResult(undefined)
+            setQuery(event.target.value); setActive(undefined)
+          }}
+          onCompositionStart={() => { setComposing(true); setResult(undefined) }} onCompositionEnd={() => setComposing(false)}
           onKeyDown={event => {
-            if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); if (activeValue !== undefined) choose(activeValue) }
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing && !composing) { event.preventDefault(); if (activeValue !== undefined) choose(activeValue) }
           }} />
-        {query && <button type="button" aria-label={tr('select.clearSearch')} onClick={() => { setQuery(''); setActive(String(value)); input.current?.focus() }}><X size={15} aria-hidden="true" /></button>}
+        {query && <button type="button" aria-label={tr('select.clearSearch')} onClick={() => { setQuery(''); setResult(undefined); setActive(String(value)); input.current?.focus() }}><X size={15} aria-hidden="true" /></button>}
       </div>
-      <div ref={list} id={`${menuID}-list`} role="listbox" aria-label={label} data-scroll-hints className="select-viewport">
-        {open && matches.map((option, index) => <OptionDetails key={option.value} label={option.label} description={showOptionDetails ? option.description : undefined} value={showOptionDetails ? option.identifier : undefined}>
+      <div ref={list} id={`${menuID}-list`} role="listbox" aria-label={label} aria-busy={loading || undefined} data-scroll-hints className="select-viewport">
+        {open && matches.map((option, index) => <OptionDetails key={option.value} label={option.label} description={showOptionDetails ? option.description : undefined} value={showOptionDetails ? option.identifier ?? option.value : undefined}>
           <button type="button" id={`${menuID}-option-${index}`} role="option" aria-selected={option.value === String(value)} disabled={option.disabled} tabIndex={-1}
             className="select-option" data-state={option.value === String(value) ? 'checked' : 'unchecked'} data-highlighted={option.value === activeValue || undefined} data-disabled={option.disabled || undefined}
             onPointerMove={event => { if (event.pointerType === 'mouse' && !option.disabled) setActive(option.value) }} onClick={() => choose(option.value)}>
@@ -174,8 +217,11 @@ export function Select({ value = '', onValueChange, children, placeholder, optio
             {option.value === String(value) && <Check className="select-check" size={15} aria-hidden="true" />}
           </button>
         </OptionDetails>)}
-        {open && !matches.length && <p className="select-empty" role="status">{tr('select.noResults')}</p>}
       </div>
+      {open && remote && !keyword ? <p className="select-empty" role="status">{tr('select.remotePlaceholder')}</p>
+        : open && loading ? <p className="select-empty" role="status">{tr('select.loading')}</p>
+        : open && remote && current?.failed ? <div className="select-search-error" role="alert"><p>{tr('select.searchFailed')}</p><button type="button" onClick={() => { setResult(undefined); setRetry(value => value + 1); input.current?.focus() }}>{tr('select.retry')}</button></div>
+        : open && !composing && !matches.length && <p className="select-empty" role="status">{tr('select.noResults')}</p>}
     </div>, portalContainer ?? document.body)}
   </>
 }
